@@ -5,6 +5,11 @@ def xy(a):
 	return([x,y])
 def mv(x,y):
 	return str(chr(ord('a')+x))+str(y+1)
+def oncb(x,y):
+	return 0<=x<=7 and 0<=y<=7
+def appendin(pos,x,y):
+	if oncb(x,y):
+		pos.append(mv(x,y))
 class Piece:
 	def __init__(self,name,color):
 		self.name = name
@@ -14,11 +19,16 @@ class Pawn(Piece):
 		super().__init__('P',color)
 	def rules(self,x,y,cb):
 		pos = []
-		if cb.table[x][y+1].name == '_':
-			pos.append([mv(x,y+1)])
-			if y==1:
-				if cb.table[x][y+2].name == '_':
-					pos.append([mv(x,y+2)])
+		dir = 2*(self.color==0)-1
+		if cb.table[x][y+dir].name == '_':
+			appendin(pos,x,y+dir)
+			if y==3.5-2.5*dir:
+				if cb.table[x][y+2*dir].name == '_':
+					appendin(pos,x,y+2*dir)		
+		if cb.table[x+1][y+dir].color==1-self.color:
+			appendin(pos,x+1,y+dir)
+		if cb.table[x-1][y+dir].color==1-self.color:
+			appendin(pos,x-1,y+dir)
 		return pos
 
 		
@@ -26,6 +36,33 @@ class Pawn(Piece):
 class Rook(Piece):
 	def __init__(self,color):
 		super().__init__('R',color)
+	def rules(self,x,y,cb):
+		pos = []
+		k = 1
+		while(y+k<=7 and cb.table[x][y+k].color != self.color):
+			pos.append(mv(x,y+k))
+			if cb.table[x][y+k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y-k>=0 and cb.table[x][y-k].color != self.color):
+			pos.append(mv(x,y-k))
+			if cb.table[x][y-k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(x+k<=7 and cb.table[x+k][y].color != self.color):
+			pos.append(mv(x+k,y))
+			if cb.table[x+k][y].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(x-k>=0 and cb.table[x-k][y].color != self.color):
+			pos.append(mv(x-k,y))
+			if cb.table[x-k][y].color == 1-self.color:
+				break
+			k = k+1
+		return pos
 class Knight(Piece):
 	def __init__(self,color):
 		super().__init__('N',color)
@@ -75,14 +112,17 @@ class Chessboard:
 			print()
 		print()
 	def move(self,a,b):
-		xy1=xy(a)
-		xy2=xy(b)
-		x1=xy1[0]
-		x2=xy2[0]
-		y1=xy1[1]
-		y2=xy2[1]
-		self.table[x2][y2]=self.table[x1][y1]
-		self.table[x1][y1]=Empty()
+		if b in self.rules(a):
+			xy1=xy(a)
+			xy2=xy(b)
+			x1=xy1[0]
+			x2=xy2[0]
+			y1=xy1[1]
+			y2=xy2[1]
+			self.table[x2][y2]=self.table[x1][y1]
+			self.table[x1][y1]=Empty()
+		else:
+			print('move not allowed')
 	def rules(self,a):
 		xy1=xy(a)
 		x=xy1[0]
@@ -93,7 +133,11 @@ cb.white_init()
 cb.display_table()
 cb.black_init()
 cb.display_table()
-cb.move('e2','e4')
-cb.display_table()
-print(cb.rules('e4'))
+a, b = input("Enter your move: ").split()
+while 1:
+	cb.move(a,b)
+	cb.display_table()
+	a, b = input("Enter your move: ").split()
+
+
 
