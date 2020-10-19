@@ -17,7 +17,7 @@ class Piece:
 class Pawn(Piece):
 	def __init__(self,color):
 		super().__init__('P',color)
-	def rules(self,x,y,cb):
+	def rules(self,x,y,last,cb):
 		pos = []
 		dir = 2*(self.color==0)-1
 		if oncb(x,y+dir):
@@ -32,6 +32,17 @@ class Pawn(Piece):
 		if oncb(x-1,y+dir):
 			if cb.table[x-1][y+dir].color==1-self.color:
 				pos.append(mv(x-1,y+dir))
+		if last is not None:
+			xy1 = xy(last[0])
+			xy2 = xy(last[1])
+			if y == 3.5+.5*dir and cb.table[xy2[0]][xy2[1]].name == 'P':
+				if xy2[0]==xy1[0] and xy2[1]==y and xy1[1]==y+2*dir:
+					if xy2[0]==x-1:
+						pos.append(mv(x-1,y+dir))
+						cb.table[xy2[0]][xy2[1]]=Empty()
+					if xy2[0]==x+1:
+						pos.append(mv(x+1,y+dir))
+						cb.table[xy2[0]][xy2[1]]=Empty()
 		return pos
 
 		
@@ -240,8 +251,8 @@ class Chessboard:
 				print(cb.table[j][i].name+str(cb.table[j][i].color),end='|')
 			print()
 		print()
-	def move(self,a,b):
-		if b in self.rules(a):
+	def move(self,a,b,last):
+		if b in self.rules(a,last):
 			xy1=xy(a)
 			xy2=xy(b)
 			x1=xy1[0]
@@ -250,25 +261,43 @@ class Chessboard:
 			y2=xy2[1]
 			self.table[x2][y2]=self.table[x1][y1]
 			self.table[x1][y1]=Empty()
+			return 1
 		else:
 			print()
 			print('move not allowed')
 			print()
-	def rules(self,a):
+			return 0
+	def rules(self,a,last):
 		xy1=xy(a)
 		x=xy1[0]
 		y=xy1[1]
-		return self.table[x][y].rules(x,y,self)
+		if self.table[x][y].name == 'P':
+			return self.table[x][y].rules(x,y,last,self)
+		else:
+			return self.table[x][y].rules(x,y,self)
+
+class Chessgame:
+	def __init__(self,cb):
+		self.cb = cb
+	def two_players(self):
+		self.cb.display_table()
+		a, b = input("Enter your move: ").split()
+		last = None
+		while 1:
+			move = self.cb.move(a,b,last)
+			self.cb.display_table()
+			if move:
+				last = [a,b]
+			a, b = input("Enter your move: ").split()
+	
+		
+		
 cb = Chessboard()
 cb.white_init()
-cb.display_table()
 cb.black_init()
-cb.display_table()
-a, b = input("Enter your move: ").split()
-while 1:
-	cb.move(a,b)
-	cb.display_table()
-	a, b = input("Enter your move: ").split()
+new_game = Chessgame(cb)
+new_game.two_players()
+
 
 
 
