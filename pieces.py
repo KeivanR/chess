@@ -20,15 +20,18 @@ class Pawn(Piece):
 	def rules(self,x,y,cb):
 		pos = []
 		dir = 2*(self.color==0)-1
-		if cb.table[x][y+dir].name == '_':
-			appendin(pos,x,y+dir)
-			if y==3.5-2.5*dir:
-				if cb.table[x][y+2*dir].name == '_':
-					appendin(pos,x,y+2*dir)		
-		if cb.table[x+1][y+dir].color==1-self.color:
-			appendin(pos,x+1,y+dir)
-		if cb.table[x-1][y+dir].color==1-self.color:
-			appendin(pos,x-1,y+dir)
+		if oncb(x,y+dir):
+			if cb.table[x][y+dir].name == '_':
+				pos.append(mv(x,y+dir))
+				if y==3.5-2.5*dir:
+					if cb.table[x][y+2*dir].name == '_':
+						pos.append(mv(x,y+2*dir))	
+		if oncb(x+1,y+dir):	
+			if cb.table[x+1][y+dir].color==1-self.color:
+				pos.append(mv(x+1,y+dir))
+		if oncb(x-1,y+dir):
+			if cb.table[x-1][y+dir].color==1-self.color:
+				pos.append(mv(x-1,y+dir))
 		return pos
 
 		
@@ -66,15 +69,141 @@ class Rook(Piece):
 class Knight(Piece):
 	def __init__(self,color):
 		super().__init__('N',color)
+	def rules(self,x,y,cb):
+		pos = []
+		if oncb(x-2,y-1):
+			if cb.table[x-2][y-1].color != self.color:
+				pos.append(mv(x-2,y-1))
+		if oncb(x-2,y+1):
+			if cb.table[x-2][y+1].color != self.color:
+				pos.append(mv(x-2,y+1))
+		if oncb(x-1,y-2):
+			if cb.table[x-1][y-2].color != self.color:
+				pos.append(mv(x-1,y-2))
+		if oncb(x-1,y+2):
+			if cb.table[x-1][y+2].color != self.color:
+				pos.append(mv(x-1,y+2))
+		if oncb(x+1,y-2):
+			if cb.table[x+1][y-2].color != self.color:
+				pos.append(mv(x+1,y-2))
+		if oncb(x+1,y+2):
+			if cb.table[x+1][y+2].color != self.color:
+				pos.append(mv(x+1,y+2))
+		if oncb(x+2,y-1):
+			if cb.table[x+2][y-1].color != self.color:
+				pos.append(mv(x+2,y-1))
+		if oncb(x+2,y+1):
+			if cb.table[x+2][y+1].color != self.color:
+				pos.append(mv(x+2,y+1))
+		return pos
+		
 class Bishop(Piece):
 	def __init__(self,color):
 		super().__init__('B',color)
+	def rules(self,x,y,cb):
+		pos = []
+
+		k = 1
+		while(y+k<=7 and x+k<=7 and cb.table[x+k][y+k].color != self.color):
+			pos.append(mv(x+k,y+k))
+			if cb.table[x+k][y+k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y-k>=0 and x+k<=7 and cb.table[x+k][y-k].color != self.color):
+			pos.append(mv(x+k,y-k))
+			if cb.table[x+k][y-k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y+k<=7 and x-k>=0 and cb.table[x-k][y+k].color != self.color):
+			pos.append(mv(x-k,y+k))
+			if cb.table[x-k][y+k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y-k>=0 and x-k>=0 and cb.table[x-k][y-k].color != self.color):
+			pos.append(mv(x-k,y-k))
+			if cb.table[x-k][y-k].color == 1-self.color:
+				break
+			k = k+1
+		return pos
 class Queen(Piece):
 	def __init__(self,color):
 		super().__init__('Q',color)
+	def rules(self,x,y,cb):
+		pos = []
+		k = 1
+		while(y+k<=7 and cb.table[x][y+k].color != self.color):
+			pos.append(mv(x,y+k))
+			if cb.table[x][y+k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y-k>=0 and cb.table[x][y-k].color != self.color):
+			pos.append(mv(x,y-k))
+			if cb.table[x][y-k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(x+k<=7 and cb.table[x+k][y].color != self.color):
+			pos.append(mv(x+k,y))
+			if cb.table[x+k][y].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(x-k>=0 and cb.table[x-k][y].color != self.color):
+			pos.append(mv(x-k,y))
+			if cb.table[x-k][y].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y+k<=7 and x+k<=7 and cb.table[x+k][y+k].color != self.color):
+			pos.append(mv(x+k,y+k))
+			if cb.table[x+k][y+k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y-k>=0 and x+k<=7 and cb.table[x+k][y-k].color != self.color):
+			pos.append(mv(x+k,y-k))
+			if cb.table[x+k][y-k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y+k<=7 and x-k>=0 and cb.table[x-k][y+k].color != self.color):
+			pos.append(mv(x-k,y+k))
+			if cb.table[x-k][y+k].color == 1-self.color:
+				break
+			k = k+1
+		k = 1
+		while(y-k>=0 and x-k>=0 and cb.table[x-k][y-k].color != self.color):
+			pos.append(mv(x-k,y-k))
+			if cb.table[x-k][y-k].color == 1-self.color:
+				break
+			k = k+1
+		return pos
 class King(Piece):
 	def __init__(self,color):
 		super().__init__('K',color)
+	def rules(self,x,y,cb):
+		pos = []
+		if oncb(x-1,y-1) and cb.table[x-1][y-1].color != self.color:
+			pos.append(mv(x-1,y-1))
+		if oncb(x-1,y) and cb.table[x-1][y].color != self.color:
+			pos.append(mv(x-1,y))
+		if oncb(x-1,y+1) and cb.table[x-1][y+1].color != self.color:
+			pos.append(mv(x-1,y+1))
+		if oncb(x,y-1) and cb.table[x][y-1].color != self.color:
+			pos.append(mv(x,y-1))
+		if oncb(x,y+1) and cb.table[x][y+1].color != self.color:
+			pos.append(mv(x,y+1))
+		if oncb(x+1,y-1) and cb.table[x+1][y-1].color != self.color:
+			pos.append(mv(x+1,y-1))
+		if oncb(x+1,y) and cb.table[x+1][y].color != self.color:
+			pos.append(mv(x+1,y))
+		if oncb(x+1,y+1) and cb.table[x+1][y+1].color != self.color:
+			pos.append(mv(x+1,y+1))
+		return pos
 class Empty(Piece):
 	def __init__(self):
 		super().__init__('_','_')
@@ -122,7 +251,9 @@ class Chessboard:
 			self.table[x2][y2]=self.table[x1][y1]
 			self.table[x1][y1]=Empty()
 		else:
+			print()
 			print('move not allowed')
+			print()
 	def rules(self,a):
 		xy1=xy(a)
 		x=xy1[0]
