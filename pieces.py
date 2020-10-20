@@ -39,10 +39,8 @@ class Pawn(Piece):
 				if xy2[0]==xy1[0] and xy2[1]==y and xy1[1]==y+2*dir:
 					if xy2[0]==x-1:
 						pos.append(mv(x-1,y+dir))
-						cb.table[xy2[0]][xy2[1]]=Empty()
 					if xy2[0]==x+1:
 						pos.append(mv(x+1,y+dir))
-						cb.table[xy2[0]][xy2[1]]=Empty()
 		return pos
 
 		
@@ -259,7 +257,19 @@ class Chessboard:
 			x2=xy2[0]
 			y1=xy1[1]
 			y2=xy2[1]
+			if self.table[x1][y1].name=='P' and x1!=x2 and self.table[x2][y2].name=='_':
+				self.table[x2][y1]=Empty()
 			self.table[x2][y2]=self.table[x1][y1]
+			if self.table[x1][y1].name=='P' and y2==7 or y2==0:
+				prom = input('Choose promotion: N,B,R,Q?')
+				if prom == 'N':
+					self.table[x2][y2] = Knight(self.table[x2][y2].color)
+				if prom == 'B':
+					self.table[x2][y2] = Bishop(self.table[x2][y2].color)
+				if prom == 'R':
+					self.table[x2][y2] = Rook(self.table[x2][y2].color)
+				if prom == 'Q':
+					self.table[x2][y2] = Queen(self.table[x2][y2].color)
 			self.table[x1][y1]=Empty()
 			return 1
 		else:
@@ -275,19 +285,34 @@ class Chessboard:
 			return self.table[x][y].rules(x,y,last,self)
 		else:
 			return self.table[x][y].rules(x,y,self)
+	def allrules(self,last):
+		white = []
+		black = []
+		for i in range(8):
+			for j in range(8):
+				if self.table[i][j].name!='_':
+					if self.table[i][j].color == 0:
+						white+=[mv(i,j)+' '+m for m in self.rules(mv(i,j),last)]
+					else:
+						black+=[mv(i,j)+' '+m for m in self.rules(mv(i,j),last)]
+		return [white,black]
 
 class Chessgame:
 	def __init__(self,cb):
 		self.cb = cb
 	def two_players(self):
 		self.cb.display_table()
-		a, b = input("Enter your move: ").split()
 		last = None
+		color = 0
+		print(self.cb.allrules(last)[color])
+		a, b = input("Enter your move: ").split()
 		while 1:
 			move = self.cb.move(a,b,last)
 			self.cb.display_table()
 			if move:
 				last = [a,b]
+				color = 1-color
+			print(self.cb.allrules(last)[color])
 			a, b = input("Enter your move: ").split()
 	
 		
