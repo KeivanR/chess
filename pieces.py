@@ -15,7 +15,7 @@ def oncb(x,y):
 def appendin(pos,x,y):
 	if oncb(x,y):
 		pos.append(mv(x,y))
-def move(table,a,b):
+def move(table,a,b,real=True):
 	table2 = copy.deepcopy(table)
 	xy1=xy(a)
 	xy2=xy(b)
@@ -26,7 +26,7 @@ def move(table,a,b):
 	if table2[x1][y1].name=='P' and x1!=x2 and table2[x2][y2].name=='_':
 		table2[x2][y1]=Empty()
 	table2[x2][y2]=table2[x1][y1]
-	if table2[x1][y1].name=='P' and (y2==7 or y2==0):
+	if real and table2[x1][y1].name=='P' and (y2==7 or y2==0):
 		prom = input('Choose promotion: N,B,R,Q?')
 		if prom == 'N':
 			table2[x2][y2] = Knight(table2[x2][y2].color)
@@ -74,7 +74,7 @@ def allrules_ek(table,last):
 	rules = []
 	allr = allrules(table,last)
 	for m in allr:
-		table2 = move(table,m.split()[0],m.split()[1])
+		table2 = move(table,m.split()[0],m.split()[1],real=False)
 		if not exposed_king(table2,[m.split()[0],m.split()[1]]):
 			rules.append(m)
 	return rules
@@ -337,10 +337,14 @@ class Chessgame:
 			last = [a,b]
 			allrules = allrules_ek(self.cb.table,last)
 			self.cb.display_table()
-			print(allrules)
-			a, b = input("Enter your move: ").split()
-			while not a+' '+b in allrules:
-				a, b = input("Not allowed. Enter your move: ").split()
+			if len(allrules)==0:
+				print('Checkmate mate')
+				break
+			else:
+				print(allrules)
+				a, b = input("Enter your move: ").split()
+				while not a+' '+b in allrules:
+					a, b = input("Not allowed. Enter your move: ").split()
 	
 		
 		
