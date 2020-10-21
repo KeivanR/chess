@@ -314,18 +314,21 @@ class Chessboard:
 		self.table[4][0]=King(0)
 	def get(self,mv):
 		return self.table[xy(mv)[0]][xy(mv)[1]]
-	def display_table(self):
-		for i in range(8)[::-1]:
-			for j in range(8):
+	def display_table(self,dir=-1):
+		for i in range(8)[::-dir]:
+			for j in range(8)[::dir]:
 				print(cb.table[j][i].name+str(cb.table[j][i].color),end='|')
-			print()
+			print(i+1)
+		for j in range(8)[::dir]:
+			print(chr(ord('a')+j)+' ',end=' ')
 		print()
 
 class Chessgame:
 	def __init__(self,cb):
 		self.cb = cb
 	def two_players(self):
-		self.cb.display_table()
+		chess_up=1
+		self.cb.display_table(dir=chess_up)
 		last = None
 		allrules = allrules_ek(self.cb.table,last)
 		print(allrules)
@@ -334,9 +337,10 @@ class Chessgame:
 			a, b = input("Not allowed. Enter your move: ").split()
 		while 1:
 			self.cb.table = move(self.cb.table,a,b)
+			chess_up = -chess_up
 			last = [a,b]
 			allrules = allrules_ek(self.cb.table,last)
-			self.cb.display_table()
+			self.cb.display_table(dir = chess_up)
 			if len(allrules)==0:
 				print('Checkmate mate')
 				break
