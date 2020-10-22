@@ -29,6 +29,7 @@ class Interface(Frame):
 					load = load.resize((40, 40))
 					bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
 		bkg = bkg.rotate(90*(dir+1))
+		self.bkg = bkg
 		render = ImageTk.PhotoImage(bkg)
 		img = Label(self, image=render)
 		img.image = render
@@ -41,12 +42,28 @@ class Interface(Frame):
 		allrules = pieces.allrules_ek(self.cb.table,self.last)
 		if self.a is None:
 			self.a = movexy
-			
+			for r in allrules:
+				if r.split()[0]==movexy:
+					xy2 = pieces.xy(r.split()[1])
+					mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
+					load = Image.open('yellows.png')
+					load = load.resize((35, 35))
+					load.putalpha(128)
+					self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
 		else:
 			self.b = movexy
 			if self.a+' '+self.b not in allrules:
 				self.a = movexy
 				self.b = None
+				self.display_pieces(self.cb.table,dir=self.chess_up)
+				for r in allrules:
+					if r.split()[0]==movexy:
+						xy2 = pieces.xy(r.split()[1])
+						mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
+						load = Image.open('yellows.png')
+						load = load.resize((35, 35))
+						load.putalpha(128)
+						self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
 			else:
 				self.cb.table = pieces.move(self.cb.table,self.a,self.b)
 				self.display_pieces(self.cb.table,dir=self.chess_up)
@@ -58,6 +75,11 @@ class Interface(Frame):
 				self.display_pieces(self.cb.table,dir=self.chess_up)
 				if len(allrules)==0:
 					print('Checkmate')
+		render = ImageTk.PhotoImage(self.bkg)
+		img = Label(self, image=render)
+		img.image = render
+		img.grid(row=0, column=0)
+		self.update_idletasks()
 		
 
 	def start_game(self):
@@ -65,14 +87,13 @@ class Interface(Frame):
 		self.last = None
 		self.chess_up = 1
 		self.cb = pieces.Chessboard()
+		self.cb.white_init()
+		self.cb.black_init()
 		self.bkg = Image.open("chessboard.jpg")
 		render = ImageTk.PhotoImage(self.bkg)
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
-		self.cb = pieces.Chessboard()
-		self.cb.white_init()
-		self.cb.black_init()
 		chess_up=1
 		self.display_pieces(self.cb.table,dir=chess_up)
 		
@@ -86,6 +107,13 @@ def mousetotable(x,y,dir):
 	if dir==-1:
 		return [7-int((x-c0)/(c1-c0)*8),int((y-c0)/(c1-c0)*8)]
 	return [int((x-c0)/(c1-c0)*8),7-int((y-c0)/(c1-c0)*8)]
+def tabletomouse(x,y,dir):
+	c0 = 33
+	c1 = 394
+	margin = 5
+	if dir==-1:
+		return [int((c1-c0)/8*(7-x)+c0+margin),int((c1-c0)/8*y+c0+margin)]
+	return [int((c1-c0)/8*x+c0+margin),int((c1-c0)/8*(7-y)+c0+margin)]
 
 
 window.geometry("600x500")
