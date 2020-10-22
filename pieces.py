@@ -36,6 +36,14 @@ def move(table,a,b,real=True):
 			table2[x2][y2] = Rook(table2[x2][y2].color)
 		if prom == 'Q':
 			table2[x2][y2] = Queen(table2[x2][y2].color)
+	if real and table2[x1][y1].name=='K':
+		table2[x1][y1].still = 0
+		if x2-x1==2:
+			table2[x1+1][y1]=table2[x1+3][y1]
+			table2[x1+3][y1]=Empty()
+		if x2-x1==-2:
+			table2[x1-1][y1]=table2[x1-4][y1]
+			table2[x1-4][y1]=Empty()
 	table2[x1][y1]=Empty()
 	return table2
 def rules(table,m,last):
@@ -86,6 +94,10 @@ class Piece:
 class Pawn(Piece):
 	def __init__(self,color):
 		super().__init__('P',color)
+		if color:
+			self.image = 'black_pawn.png'
+		else:
+			self.image = 'white_pawn.png'
 	def rules(self,x,y,last,table):
 		pos = []
 		dir = 2*(self.color==0)-1
@@ -117,6 +129,10 @@ class Pawn(Piece):
 class Rook(Piece):
 	def __init__(self,color):
 		super().__init__('R',color)
+		if color:
+			self.image = 'black_rook.png'
+		else:
+			self.image = 'white_rook.png'
 	def rules(self,x,y,table):
 		pos = []
 		k = 1
@@ -147,6 +163,10 @@ class Rook(Piece):
 class Knight(Piece):
 	def __init__(self,color):
 		super().__init__('N',color)
+		if color:
+			self.image = 'black_knight.png'
+		else:
+			self.image = 'white_knight.png'
 	def rules(self,x,y,table):
 		pos = []
 		if oncb(x-2,y-1):
@@ -178,6 +198,10 @@ class Knight(Piece):
 class Bishop(Piece):
 	def __init__(self,color):
 		super().__init__('B',color)
+		if color:
+			self.image = 'black_bishop.png'
+		else:
+			self.image = 'white_bishop.png'
 	def rules(self,x,y,table):
 		pos = []
 
@@ -209,6 +233,10 @@ class Bishop(Piece):
 class Queen(Piece):
 	def __init__(self,color):
 		super().__init__('Q',color)
+		if color:
+			self.image = 'black_queen.png'
+		else:
+			self.image = 'white_queen.png'
 	def rules(self,x,y,table):
 		pos = []
 		k = 1
@@ -263,6 +291,11 @@ class Queen(Piece):
 class King(Piece):
 	def __init__(self,color):
 		super().__init__('K',color)
+		if color:
+			self.image = 'black_king.png'
+		else:
+			self.image = 'white_king.png'
+		self.still = 1
 	def rules(self,x,y,table):
 		pos = []
 		if oncb(x-1,y-1) and table[x-1][y-1].color != self.color:
@@ -281,10 +314,16 @@ class King(Piece):
 			pos.append(mv(x+1,y))
 		if oncb(x+1,y+1) and table[x+1][y+1].color != self.color:
 			pos.append(mv(x+1,y+1))
+		if self.still:
+			if table[x+1][y].name=='_' and table[x+2][y].name=='_':
+					pos.append(mv(x+2,y))
+			if table[x-1][y].name=='_' and table[x-2][y].name=='_':
+					pos.append(mv(x-2,y))
 		return pos
 class Empty(Piece):
 	def __init__(self):
 		super().__init__('_','_')
+		self.image = None
 class Chessboard:
 	def __init__(self):
 		self.table = [Empty()]*8
@@ -314,7 +353,7 @@ class Chessboard:
 		self.table[4][0]=King(0)
 	def get(self,mv):
 		return self.table[xy(mv)[0]][xy(mv)[1]]
-	def display_table(self,dir=-1):
+	def display_table(self,dir=1):
 		for i in range(8)[::-dir]:
 			for j in range(8)[::dir]:
 				print(cb.table[j][i].name+str(cb.table[j][i].color),end='|')
@@ -331,7 +370,7 @@ class Chessgame:
 		self.cb.display_table(dir=chess_up)
 		last = None
 		allrules = allrules_ek(self.cb.table,last)
-		print(allrules)
+		#print(allrules)
 		a, b = input("Enter your move: ").split()
 		while not a+' '+b in allrules:
 			a, b = input("Not allowed. Enter your move: ").split()
@@ -345,13 +384,13 @@ class Chessgame:
 				print('Checkmate mate')
 				break
 			else:
-				print(allrules)
+				#print(allrules)
 				a, b = input("Enter your move: ").split()
 				while not a+' '+b in allrules:
 					a, b = input("Not allowed. Enter your move: ").split()
 	
 		
-		
+'''		
 cb = Chessboard()
 cb.white_init()
 cb.black_init()
@@ -359,5 +398,5 @@ new_game = Chessgame(cb)
 new_game.two_players()
 
 
-
+'''
 
