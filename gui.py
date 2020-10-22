@@ -1,12 +1,16 @@
 from tkinter import *
 from PIL import Image, ImageTk
 import pieces
+import time
 
 class Interface(Frame):
 	def __init__(self, fenetre, **kwargs):
 		Frame.__init__(self, fenetre, width=1000, height=1000, **kwargs)
 		self.pack(fill=BOTH)
-
+		self.a = None
+		self.last = None
+		self.chess_up = 1
+		self.cb = pieces.Chessboard()
         # Création de nos widgets
 		self.message = Label(self, text="Vous n'avez pas cliqué sur le bouton.")
 		self.message.grid(row=0, column=0)
@@ -17,35 +21,50 @@ class Interface(Frame):
 		self.bouton_cliquer = Button(self, text="Start new game", fg="red",command=self.start_game)
 		self.bouton_cliquer.grid(row=0, column=2,columnspan=2)
 	def display_pieces(self,table,dir=1):
-		self.bkg = self.bkg.rotate(90*(dir+1))
-		for i in range(8)[::-dir]:
-			for j in range(8)[::dir]:
+		bkg = Image.open("chessboard.jpg")
+		for i in range(8):
+			for j in range(8):
 				if table[j][i].name != '_':
 					load = Image.open(table[j][i].image)
+					load = load.rotate(90*(dir+1))
 					load = load.resize((40, 40))
-					self.bkg.paste(load,(46*j+32,46*(7-i)+32),load)	
-		render = ImageTk.PhotoImage(self.bkg)
+					bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
+		bkg = bkg.rotate(90*(dir+1))
+		render = ImageTk.PhotoImage(bkg)
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
-		self.cb = pieces.Chessboard()
-	
+
 		
 	def callback(self,event):
-		print ("clicked at", event.x, event.y)	
-		print(self.cb.table)
-		if wantmove:
-			self.cb.table = pieces.move(self.cb.table,a,b)
-			chess_up = -chess_up
-			last = [a,b]
-			allrules = pieces.allrules_ek(self.cb.table,last)
-			self.cb.display_table(dir = chess_up)
-			if len(allrules)==0:
-				print('Checkmate mate')
-				break
+		[x,y] = (mousetotable(event.x, event.y,self.chess_up))
+		movexy = pieces.mv(x,y)
+		allrules = pieces.allrules_ek(self.cb.table,self.last)
+		print(movexy)
+		if self.a is None:
+			self.a = movexy
+		else:
+			print("you chose ",self.a," to ",movexy)
+			self.b = movexy
+			if self.a+' '+self.b not in allrules:
+				self.a = movexy
+				self.b = None
 			else:
-	def start_game(self):
+				self.cb.table = pieces.move(self.cb.table,self.a,self.b)
+				self.chess_up = -self.chess_up
+				self.last = [self.a,self.b]
+				allrules = pieces.allrules_ek(self.cb.table,self.last)
+				time.sleep(1)
+				self.display_pieces(self.cb.table,dir=self.chess_up)
+				if len(allrules)==0:
+					print('Checkmate')
 		
+
+	def start_game(self):
+		self.a = None
+		self.last = None
+		self.chess_up = 1
+		self.cb = pieces.Chessboard()
 		self.message['text']='white play'
 		self.bkg = Image.open("chessboard.jpg")
 		render = ImageTk.PhotoImage(self.bkg)
@@ -57,31 +76,17 @@ class Interface(Frame):
 		self.cb.black_init()
 		chess_up=1
 		self.display_pieces(self.cb.table,dir=chess_up)
-		last = None
-		allrules = pieces.allrules_ek(self.cb.table,last)
-		#print(allrules)
-		a, b = input("Enter your move: ").split()
-		while not a+' '+b in allrules:
-			a, b = input("Not allowed. Enter your move: ").split()
-		while 1:
-			self.cb.table = move(self.cb.table,a,b)
-			chess_up = -chess_up
-			last = [a,b]
-			allrules = pieces.allrules_ek(self.cb.table,last)
-			self.cb.display_table(dir = chess_up)
-			if len(allrules)==0:
-				print('Checkmate mate')
-				break
-			else:
-				#print(allrules)
-				a, b = input("Enter your move: ").split()
-				while not a+' '+b in allrules:
-					a, b = input("Not allowed. Enter your move: ").split()
+		
 
 window = Tk()
 #33,394
 
-
+def mousetotable(x,y,dir):
+	c0 = 33
+	c1 = 394
+	if dir==-1:
+		return [7-int((x-c0)/(c1-c0)*8),int((y-c0)/(c1-c0)*8)]
+	return [int((x-c0)/(c1-c0)*8),7-int((y-c0)/(c1-c0)*8)]
 
 
 window.geometry("600x500")
