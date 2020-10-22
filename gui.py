@@ -12,14 +12,13 @@ class Interface(Frame):
 		self.chess_up = 1
 		self.cb = pieces.Chessboard()
         # Création de nos widgets
-		self.message = Label(self, text="Vous n'avez pas cliqué sur le bouton.")
-		self.message.grid(row=0, column=0)
         
 		self.bouton_quitter = Button(self, text="Quitter", command=self.quit)
-		self.bouton_quitter.grid(row=0, column=0)
+		self.bouton_quitter.grid(row=1, column=2)
         
 		self.bouton_cliquer = Button(self, text="Start new game", fg="red",command=self.start_game)
 		self.bouton_cliquer.grid(row=0, column=2,columnspan=2)
+
 	def display_pieces(self,table,dir=1):
 		bkg = Image.open("chessboard.jpg")
 		for i in range(8):
@@ -40,17 +39,18 @@ class Interface(Frame):
 		[x,y] = (mousetotable(event.x, event.y,self.chess_up))
 		movexy = pieces.mv(x,y)
 		allrules = pieces.allrules_ek(self.cb.table,self.last)
-		print(movexy)
 		if self.a is None:
 			self.a = movexy
+			
 		else:
-			print("you chose ",self.a," to ",movexy)
 			self.b = movexy
 			if self.a+' '+self.b not in allrules:
 				self.a = movexy
 				self.b = None
 			else:
 				self.cb.table = pieces.move(self.cb.table,self.a,self.b)
+				self.display_pieces(self.cb.table,dir=self.chess_up)
+				self.update_idletasks()
 				self.chess_up = -self.chess_up
 				self.last = [self.a,self.b]
 				allrules = pieces.allrules_ek(self.cb.table,self.last)
@@ -65,7 +65,6 @@ class Interface(Frame):
 		self.last = None
 		self.chess_up = 1
 		self.cb = pieces.Chessboard()
-		self.message['text']='white play'
 		self.bkg = Image.open("chessboard.jpg")
 		render = ImageTk.PhotoImage(self.bkg)
 		img = Label(self, image=render)
