@@ -17,6 +17,8 @@ def appendin(pos,x,y):
 		pos.append(mv(x,y))
 def move(table,a,b,real=True):
 	table2 = copy.deepcopy(table)
+	if a==b:
+		return table2
 	xy1=xy(a)
 	xy2=xy(b)
 	x1=xy1[0]
@@ -26,6 +28,7 @@ def move(table,a,b,real=True):
 	if table2[x1][y1].name=='P' and x1!=x2 and table2[x2][y2].name=='_':
 		table2[x2][y1]=Empty()
 	table2[x2][y2]=table2[x1][y1]
+	#promotion
 	if real and table2[x1][y1].name=='P' and (y2==7 or y2==0):
 		prom = input('Choose promotion: N,B,R,Q?')
 		if prom == 'N':
@@ -36,6 +39,7 @@ def move(table,a,b,real=True):
 			table2[x2][y2] = Rook(table2[x2][y2].color)
 		if prom == 'Q':
 			table2[x2][y2] = Queen(table2[x2][y2].color)
+	#castling
 	if real and table2[x1][y1].name=='K':
 		table2[x1][y1].still = 0
 		if x2-x1==2:
@@ -62,7 +66,7 @@ def allrules(table,last):
 	allr = []
 	for i in range(8):
 		for j in range(8):
-			if table[i][j].name!='_' and table[i][j].color == color:
+			if table[i][j].color == color:
 				for m in rules(table,mv(i,j),last):
 					allr.append(mv(i,j)+' '+m)
 	return allr
@@ -73,7 +77,7 @@ def exposed_king(table,last):
 		color = 1-table[xy(last[1])[0]][xy(last[1])[1]].color
 	for i in range(8):
 		for j in range(8):
-			if table[i][j].name!='_' and table[i][j].color == color:
+			if table[i][j].color == color:
 				for m in rules(table,mv(i,j),last):
 					if table[xy(m)[0]][xy(m)[1]].name=='K':
 						return 1
@@ -82,9 +86,19 @@ def allrules_ek(table,last):
 	rules = []
 	allr = allrules(table,last)
 	for m in allr:
+		[x1,y1]=xy(m.split()[0])
+		[x2,y2]=xy(m.split()[1])
 		table2 = move(table,m.split()[0],m.split()[1],real=False)
-		if not exposed_king(table2,[m.split()[0],m.split()[1]]):
-			rules.append(m)
+		if table[x1][y1].name!='K' or np.abs(x1-x2)<2:
+			if not exposed_king(table2,[m.split()[0],m.split()[1]]):
+				rules.append(m)
+		else:
+			to = int((x2-x1)/np.abs(x2-x1))
+			table2 = move(table,mv(x1,y1),mv(x1,y1),real=False)
+			table3 = move(table,mv(x1,y1),mv(x1+to,y1),real=False)
+			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),real=False)
+			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)]) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)]) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)]):
+				rules.append(m)
 	return rules
 
 class Piece:

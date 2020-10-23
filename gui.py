@@ -35,35 +35,29 @@ class Interface(Frame):
 		img.image = render
 		img.grid(row=0, column=0)
 
-		
+	def options(self,allrules,movexy):
+		for r in allrules:
+			if r.split()[0]==movexy:
+				xy2 = pieces.xy(r.split()[1])
+				mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
+				load = Image.open('yellows.png')
+				load = load.resize((35, 35))
+				load.putalpha(128)
+				self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
 	def callback(self,event):
 		[x,y] = (mousetotable(event.x, event.y,self.chess_up))
 		movexy = pieces.mv(x,y)
 		allrules = pieces.allrules_ek(self.cb.table,self.last)
 		if self.a is None:
 			self.a = movexy
-			for r in allrules:
-				if r.split()[0]==movexy:
-					xy2 = pieces.xy(r.split()[1])
-					mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
-					load = Image.open('yellows.png')
-					load = load.resize((35, 35))
-					load.putalpha(128)
-					self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
+			self.options(allrules,movexy)
 		else:
 			self.b = movexy
 			if self.a+' '+self.b not in allrules:
 				self.a = movexy
 				self.b = None
 				self.display_pieces(self.cb.table,dir=self.chess_up)
-				for r in allrules:
-					if r.split()[0]==movexy:
-						xy2 = pieces.xy(r.split()[1])
-						mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
-						load = Image.open('yellows.png')
-						load = load.resize((35, 35))
-						load.putalpha(128)
-						self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
+				self.options(allrules,movexy)
 			else:
 				self.cb.table = pieces.move(self.cb.table,self.a,self.b)
 				self.display_pieces(self.cb.table,dir=self.chess_up)
