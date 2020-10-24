@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
 import pieces
+import ai
 import time
 
 class Interface(Frame):
@@ -9,7 +10,7 @@ class Interface(Frame):
 		       
 		self.rowconfigure(0, weight=1)           
 		self.columnconfigure(0, weight=1) 
-
+		self.comp = None
 		self.pack(fill=BOTH)
 		self.a = None
 		self.last = None
@@ -83,10 +84,9 @@ class Interface(Frame):
 						self.chess_up = -self.chess_up
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 					else:
-						cmove = ['d7','d5']
+						cmove = self.comp.move(self.cb.table,self.last).split()
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 						self.display_pieces(self.cb.table,dir=self.chess_up)
-						self.update_idletasks()
 						self.last = cmove		
 						allrules = pieces.allrules_ek(self.cb.table,self.last)					
 						if len(allrules)==0:
@@ -103,6 +103,8 @@ class Interface(Frame):
 		self.option = option
 		self.a = None
 		self.last = None
+		if option != 'Two players':
+			self.comp = ai.Keivchess(0)
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
@@ -116,6 +118,18 @@ class Interface(Frame):
 		img.image = render
 		img.grid(row=0, column=0)
 		self.display_pieces(self.cb.table,dir=self.chess_up)
+		self.update_idletasks()
+		if option == 'Play black':
+			time.sleep(1)
+			cmove = self.comp.move(self.cb.table,self.last).split()
+			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
+			self.display_pieces(self.cb.table,dir=self.chess_up)
+			self.last = cmove
+			render = ImageTk.PhotoImage(self.bkg)
+			img = Label(self, image=render)
+			img.image = render
+			img.grid(row=0, column=0)
+			self.update_idletasks()
 		
 
 window = Tk()
