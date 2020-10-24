@@ -7,13 +7,15 @@ import time
 class Interface(Frame):
 	def __init__(self, fenetre, **kwargs):
 		Frame.__init__(self, fenetre, width=1000, height=1200, **kwargs)
-		       
+		self.winfo_toplevel().title("Keivchess")
 		self.rowconfigure(0, weight=1)           
 		self.columnconfigure(0, weight=1) 
 		self.comp = None
 		self.pack(fill=BOTH)
 		self.a = None
 		self.last = None
+		self.checkmate = 0
+
 		self.cb = pieces.Chessboard()
 		self.firstclick = True
         # Création de nos widgets
@@ -29,17 +31,16 @@ class Interface(Frame):
 		self.bouton_b.grid(row=3, column=2,columnspan=1)
 
 	def display_pieces(self,table,dir=1):
-		bkg = Image.open("chessboard.jpg")
+		self.bkg = Image.open("chessboard.jpg")
 		for i in range(8):
 			for j in range(8):
 				if table[j][i].name != '_':
 					load = Image.open(table[j][i].image)
 					load = load.rotate(90*(dir+1))
 					load = load.resize((40, 40))
-					bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
-		bkg = bkg.rotate(90*(dir+1))
-		self.bkg = bkg
-		render = ImageTk.PhotoImage(bkg)
+					self.bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
+		self.bkg = self.bkg.rotate(90*(dir+1))
+		render = ImageTk.PhotoImage(self.bkg)
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
@@ -53,6 +54,27 @@ class Interface(Frame):
 				load = load.resize((35, 35))
 				load.putalpha(128)
 				self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
+	def show_last(self):
+		xy1 = pieces.xy(self.last[0])
+		xy2 = pieces.xy(self.last[1])
+		mouse1 = tabletomouse(xy1[0],xy1[1],self.chess_up)
+		mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
+		p1 = -5
+		p2 = 33
+		load = Image.open("reds.png")
+		load = load.resize((42, 5))
+		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p2),load)
+		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p2),load)
+		load = load.resize((42, 5))
+		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p1),load)
+		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p1),load)
+		load = load.resize((5, 42))
+		self.bkg.paste(load,(mouse1[0]+p2,mouse1[1]+p1),load)
+		self.bkg.paste(load,(mouse2[0]+p2,mouse2[1]+p1),load)
+		load = load.resize((5, 42))
+		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p1),load)
+		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p1),load)
+
 	def callback(self,event):
 		if self.firstclick:
 			self.firstclick = False
@@ -77,21 +99,24 @@ class Interface(Frame):
 					self.last = [self.a,self.b]		
 					allrules = pieces.allrules_ek(self.cb.table,self.last)					
 					if len(allrules)==0:
-						print('Checkmate')
+						self.winfo_toplevel().title("Checkmate!")
+						self.checkmate = 1
 					time.sleep(1)
 					
 					if self.option == 'Two players':
 						self.chess_up = -self.chess_up
 						self.display_pieces(self.cb.table,dir=self.chess_up)
-					else:
+					elif not self.checkmate:
 						cmove = self.comp.move(self.cb.table,self.last).split()
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
 						allrules = pieces.allrules_ek(self.cb.table,self.last)					
 						if len(allrules)==0:
-							print('Checkmate')
-					
+							self.winfo_toplevel().title("Checkmate!")
+							self.checkmate = 1
+			if self.last is not None:
+				self.show_last()		
 			render = ImageTk.PhotoImage(self.bkg)
 			img = Label(self, image=render)
 			img.image = render
@@ -100,6 +125,7 @@ class Interface(Frame):
 			
 
 	def start_game(self,option):
+		self.winfo_toplevel().title("Keivchess")
 		self.option = option
 		self.a = None
 		self.last = None
@@ -125,6 +151,7 @@ class Interface(Frame):
 			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 			self.display_pieces(self.cb.table,dir=self.chess_up)
 			self.last = cmove
+			self.show_last()
 			render = ImageTk.PhotoImage(self.bkg)
 			img = Label(self, image=render)
 			img.image = render
