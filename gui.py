@@ -101,9 +101,9 @@ class Interface(Frame):
 					if len(allrules)==0:
 						self.winfo_toplevel().title("Checkmate!")
 						self.checkmate = 1
-					time.sleep(1)
 					
 					if self.option == 'Two players':
+						time.sleep(1)
 						self.chess_up = -self.chess_up
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 					elif not self.checkmate:
@@ -130,7 +130,7 @@ class Interface(Frame):
 		self.a = None
 		self.last = None
 		if option != 'Two players':
-			self.comp = ai.Keivchess(0)
+			self.comp = ai.Keivchess(2)
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
@@ -146,7 +146,6 @@ class Interface(Frame):
 		self.display_pieces(self.cb.table,dir=self.chess_up)
 		self.update_idletasks()
 		if option == 'Play black':
-			time.sleep(1)
 			cmove = self.comp.move(self.cb.table,self.last).split()
 			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 			self.display_pieces(self.cb.table,dir=self.chess_up)

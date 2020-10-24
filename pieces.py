@@ -112,6 +112,7 @@ class Pawn(Piece):
 			self.image = 'black_pawn.png'
 		else:
 			self.image = 'white_pawn.png'
+		self.points = 1*(1-2*color)
 	def rules(self,x,y,last,table):
 		pos = []
 		dir = 2*(self.color==0)-1
@@ -147,6 +148,7 @@ class Rook(Piece):
 			self.image = 'black_rook.png'
 		else:
 			self.image = 'white_rook.png'
+		self.points = 5*(1-2*color)
 	def rules(self,x,y,table):
 		pos = []
 		k = 1
@@ -181,6 +183,7 @@ class Knight(Piece):
 			self.image = 'black_knight.png'
 		else:
 			self.image = 'white_knight.png'
+		self.points = 3*(1-2*color)
 	def rules(self,x,y,table):
 		pos = []
 		if oncb(x-2,y-1):
@@ -216,6 +219,7 @@ class Bishop(Piece):
 			self.image = 'black_bishop.png'
 		else:
 			self.image = 'white_bishop.png'
+		self.points = 3*(1-2*color)
 	def rules(self,x,y,table):
 		pos = []
 
@@ -251,6 +255,7 @@ class Queen(Piece):
 			self.image = 'black_queen.png'
 		else:
 			self.image = 'white_queen.png'
+		self.points = 9*(1-2*color)
 	def rules(self,x,y,table):
 		pos = []
 		k = 1
@@ -310,6 +315,7 @@ class King(Piece):
 		else:
 			self.image = 'white_king.png'
 		self.still = 1
+		self.points = 100*(1-2*color)
 	def rules(self,x,y,table):
 		pos = []
 		if oncb(x-1,y-1) and table[x-1][y-1].color != self.color:
@@ -338,6 +344,7 @@ class Empty(Piece):
 	def __init__(self):
 		super().__init__('_','_')
 		self.image = None
+		self.points=0
 class Chessboard:
 	def __init__(self):
 		self.table = [Empty()]*8
