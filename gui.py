@@ -5,19 +5,27 @@ import time
 
 class Interface(Frame):
 	def __init__(self, fenetre, **kwargs):
-		Frame.__init__(self, fenetre, width=1000, height=1000, **kwargs)
+		Frame.__init__(self, fenetre, width=1000, height=1200, **kwargs)
+		       
+		self.rowconfigure(0, weight=1)           
+		self.columnconfigure(0, weight=1) 
+
 		self.pack(fill=BOTH)
 		self.a = None
 		self.last = None
-		self.chess_up = 1
 		self.cb = pieces.Chessboard()
+		self.firstclick = True
         # Création de nos widgets
         
 		self.bouton_quitter = Button(self, text="Quitter", command=self.quit)
-		self.bouton_quitter.grid(row=1, column=2)
+		self.bouton_quitter.grid(row=0, column=2)
         
-		self.bouton_cliquer = Button(self, text="Start new game", fg="red",command=self.start_game)
-		self.bouton_cliquer.grid(row=0, column=2,columnspan=2)
+		self.bouton_tp = Button(self, text="Two players", fg="blue",command=lambda: self.start_game('Two players'))
+		self.bouton_w = Button(self, text="Play white", fg="white",command=lambda: self.start_game('Play white'))
+		self.bouton_b = Button(self, text="Play black", fg="black",command=lambda: self.start_game('Play black'))
+		self.bouton_tp.grid(row=1, column=2,columnspan=1)
+		self.bouton_w.grid(row=2, column=2,columnspan=1)
+		self.bouton_b.grid(row=3, column=2,columnspan=1)
 
 	def display_pieces(self,table,dir=1):
 		bkg = Image.open("chessboard.jpg")
@@ -35,7 +43,7 @@ class Interface(Frame):
 		img.image = render
 		img.grid(row=0, column=0)
 
-	def options(self,allrules,movexy):
+	def allowed_moves(self,allrules,movexy):
 		for r in allrules:
 			if r.split()[0]==movexy:
 				xy2 = pieces.xy(r.split()[1])
@@ -45,41 +53,60 @@ class Interface(Frame):
 				load.putalpha(128)
 				self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
 	def callback(self,event):
-		[x,y] = (mousetotable(event.x, event.y,self.chess_up))
-		movexy = pieces.mv(x,y)
-		allrules = pieces.allrules_ek(self.cb.table,self.last)
-		if self.a is None:
-			self.a = movexy
-			self.options(allrules,movexy)
+		if self.firstclick:
+			self.firstclick = False
 		else:
-			self.b = movexy
-			if self.a+' '+self.b not in allrules:
+			[x,y] = (mousetotable(event.x, event.y,self.chess_up))
+			movexy = pieces.mv(x,y)
+			allrules = pieces.allrules_ek(self.cb.table,self.last)
+			if self.a is None:
 				self.a = movexy
-				self.b = None
-				self.display_pieces(self.cb.table,dir=self.chess_up)
-				self.options(allrules,movexy)
+				self.allowed_moves(allrules,movexy)
 			else:
-				self.cb.table = pieces.move(self.cb.table,self.a,self.b)
-				self.display_pieces(self.cb.table,dir=self.chess_up)
-				self.update_idletasks()
-				self.chess_up = -self.chess_up
-				self.last = [self.a,self.b]
-				allrules = pieces.allrules_ek(self.cb.table,self.last)
-				time.sleep(1)
-				self.display_pieces(self.cb.table,dir=self.chess_up)
-				if len(allrules)==0:
-					print('Checkmate')
-		render = ImageTk.PhotoImage(self.bkg)
-		img = Label(self, image=render)
-		img.image = render
-		img.grid(row=0, column=0)
-		self.update_idletasks()
-		
+				self.b = movexy
+				if self.a+' '+self.b not in allrules:
+					self.a = movexy
+					self.b = None
+					self.display_pieces(self.cb.table,dir=self.chess_up)
+					self.allowed_moves(allrules,movexy)
+				else:
+					self.cb.table = pieces.move(self.cb.table,self.a,self.b)
+					self.display_pieces(self.cb.table,dir=self.chess_up)
+					self.update_idletasks()
+					self.last = [self.a,self.b]		
+					allrules = pieces.allrules_ek(self.cb.table,self.last)					
+					if len(allrules)==0:
+						print('Checkmate')
+					time.sleep(1)
+					
+					if self.option == 'Two players':
+						self.chess_up = -self.chess_up
+						self.display_pieces(self.cb.table,dir=self.chess_up)
+					else:
+						cmove = ['d7','d5']
+						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
+						self.display_pieces(self.cb.table,dir=self.chess_up)
+						self.update_idletasks()
+						self.last = cmove		
+						allrules = pieces.allrules_ek(self.cb.table,self.last)					
+						if len(allrules)==0:
+							print('Checkmate')
+					
+			render = ImageTk.PhotoImage(self.bkg)
+			img = Label(self, image=render)
+			img.image = render
+			img.grid(row=0, column=0)
+			self.update_idletasks()
+			
 
-	def start_game(self):
+	def start_game(self,option):
+		self.option = option
 		self.a = None
 		self.last = None
-		self.chess_up = 1
+		if option == 'Play black':
+			self.chess_up=-1
+		else:
+			self.chess_up=1
 		self.cb = pieces.Chessboard()
 		self.cb.white_init()
 		self.cb.black_init()
@@ -88,8 +115,7 @@ class Interface(Frame):
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
-		chess_up=1
-		self.display_pieces(self.cb.table,dir=chess_up)
+		self.display_pieces(self.cb.table,dir=self.chess_up)
 		
 
 window = Tk()
@@ -104,10 +130,13 @@ def mousetotable(x,y,dir):
 def tabletomouse(x,y,dir):
 	c0 = 33
 	c1 = 394
-	margin = 5
+	mx1 = 8
+	my1 = 4
+	mx2 = 3
+	my2 = 8
 	if dir==-1:
-		return [int((c1-c0)/8*(7-x)+c0+margin),int((c1-c0)/8*y+c0+margin)]
-	return [int((c1-c0)/8*x+c0+margin),int((c1-c0)/8*(7-y)+c0+margin)]
+		return [int((c1-c0)/8*(7-x)+c0+mx2),int((c1-c0)/8*y+c0+my2)]
+	return [int((c1-c0)/8*x+c0+mx1),int((c1-c0)/8*(7-y)+c0+my1)]
 
 
 window.geometry("600x500")
