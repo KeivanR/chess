@@ -12,14 +12,15 @@ def rec_sum(table,last,color,k):
 	val = []
 	if len(allr)==0:
 		return [None,100*(2*color-1)]
-	for m in allr:
-		[x1,y1]=pieces.xy(m.split()[0])
-		[x2,y2]=pieces.xy(m.split()[1])
-		table2 = pieces.move(table,m.split()[0],m.split()[1],real=False)
-		if k==0:
+	if k==0:
+		for m in allr:
+			table2 = pieces.move(table,m.split()[0],m.split()[1],real=False)
 			val.append(sum_value(table2))
-		else:
-			val.append(sum_value(table2)+rec_sum(table2,[m.split()[0],m.split()[1]],1-color,k-1)[1])
+	else:
+		for m in allr:
+			table2 = pieces.move(table,m.split()[0],m.split()[1],real=False)
+			lasval = (sum_value(table2)+rec_sum(table2,[m.split()[0],m.split()[1]],1-color,k-1)[1])/2
+			val.append(lasval)
 	val = np.asarray(val)
 	if color == 0:
 		return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]
@@ -28,8 +29,11 @@ def rec_sum(table,last,color,k):
 class Keivchess:
 	def __init__(self,level):
 		self.level = level
-	def move(self,table,last):		
-		if self.level==0:
+	def move(self,table,last):
+		if self.level==-1:
+			allrules = pieces.allrules_ek(table,last)
+			return allrules[0]		
+		elif self.level==0:
 			allrules = pieces.allrules_ek(table,last)
 			return random.choice(allrules)
 		else:

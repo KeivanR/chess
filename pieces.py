@@ -20,7 +20,7 @@ def move(table,a,b,real=True):
 	if a==b:
 		return table2
 	xy1=xy(a)
-	xy2=xy(b)
+	xy2=xy(b[0:2])
 	x1=xy1[0]
 	x2=xy2[0]
 	y1=xy1[1]
@@ -29,15 +29,14 @@ def move(table,a,b,real=True):
 		table2[x2][y1]=Empty()
 	table2[x2][y2]=table2[x1][y1]
 	#promotion
-	if real and table2[x1][y1].name=='P' and (y2==7 or y2==0):
-		prom = input('Choose promotion: N,B,R,Q?')
-		if prom == 'N':
+	if len(b)==3:
+		if b[2] == 'N':
 			table2[x2][y2] = Knight(table2[x2][y2].color)
-		if prom == 'B':
+		if b[2] == 'B':
 			table2[x2][y2] = Bishop(table2[x2][y2].color)
-		if prom == 'R':
+		if b[2] == 'R':
 			table2[x2][y2] = Rook(table2[x2][y2].color)
-		if prom == 'Q':
+		if b[2] == 'Q':
 			table2[x2][y2] = Queen(table2[x2][y2].color)
 	#castling
 	if real and table2[x1][y1].name=='K':
@@ -49,6 +48,7 @@ def move(table,a,b,real=True):
 			table2[x1-1][y1]=table2[x1-4][y1]
 			table2[x1-4][y1]=Empty()
 	table2[x1][y1]=Empty()
+	
 	return table2
 def rules(table,m,last):
 	xy1=xy(m)
@@ -118,16 +118,34 @@ class Pawn(Piece):
 		dir = 2*(self.color==0)-1
 		if oncb(x,y+dir):
 			if table[x][y+dir].name == '_':
-				pos.append(mv(x,y+dir))
+				if y==3.5+2.5*dir:
+					pos.append(mv(x,y+dir)+'N')
+					pos.append(mv(x,y+dir)+'B')
+					pos.append(mv(x,y+dir)+'R')
+					pos.append(mv(x,y+dir)+'Q')
+				else:
+					pos.append(mv(x,y+dir))
 				if y==3.5-2.5*dir:
 					if table[x][y+2*dir].name == '_':
 						pos.append(mv(x,y+2*dir))	
 		if oncb(x+1,y+dir):	
 			if table[x+1][y+dir].color==1-self.color:
-				pos.append(mv(x+1,y+dir))
+				if y==3.5+2.5*dir:
+					pos.append(mv(x+1,y+dir)+'N')
+					pos.append(mv(x+1,y+dir)+'B')
+					pos.append(mv(x+1,y+dir)+'R')
+					pos.append(mv(x+1,y+dir)+'Q')
+				else:
+					pos.append(mv(x+1,y+dir))
 		if oncb(x-1,y+dir):
 			if table[x-1][y+dir].color==1-self.color:
-				pos.append(mv(x-1,y+dir))
+				if y==3.5+2.5*dir:
+					pos.append(mv(x-1,y+dir)+'N')
+					pos.append(mv(x-1,y+dir)+'B')
+					pos.append(mv(x-1,y+dir)+'R')
+					pos.append(mv(x-1,y+dir)+'Q')
+				else:
+					pos.append(mv(x-1,y+dir))
 		if last is not None:
 			xy1 = xy(last[0])
 			xy2 = xy(last[1])

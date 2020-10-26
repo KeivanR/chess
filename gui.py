@@ -86,7 +86,11 @@ class Interface(Frame):
 				self.a = movexy
 				self.allowed_moves(allrules,movexy)
 			else:
-				self.b = movexy
+				if self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]].name=='P' and y==3.5+3.5*self.chess_up:
+					prom = input('Promotion:N,B,R,Q?')
+					self.b = movexy+prom
+				else:
+					self.b = movexy
 				if self.a+' '+self.b not in allrules:
 					self.a = movexy
 					self.b = None
@@ -107,7 +111,9 @@ class Interface(Frame):
 						self.chess_up = -self.chess_up
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 					elif not self.checkmate:
+						start = time.time()
 						cmove = self.comp.move(self.cb.table,self.last).split()
+						print(time.time()-start,'s')
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
@@ -126,11 +132,12 @@ class Interface(Frame):
 
 	def start_game(self,option):
 		self.winfo_toplevel().title("Keivchess")
+		self.checkmate = 0
 		self.option = option
 		self.a = None
 		self.last = None
 		if option != 'Two players':
-			self.comp = ai.Keivchess(2)
+			self.comp = ai.Keivchess(-1)
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
