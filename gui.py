@@ -15,6 +15,8 @@ class Interface(Frame):
 		self.a = None
 		self.last = None
 		self.checkmate = 0
+		self.hist = []
+		self.hist_time = 0
 
 		self.cb = pieces.Chessboard()
 		self.startGame = False
@@ -32,7 +34,7 @@ class Interface(Frame):
 		self.bouton_w.grid(row=3, column=2,columnspan=1)
 		self.bouton_b.grid(row=4, column=2,columnspan=1)
 
-	def display_pieces(self,table,dir=1):
+	def display_pieces(self,table,dir=1,save=True):
 		self.bkg = Image.open("chessboard.jpg")
 		for i in range(8):
 			for j in range(8):
@@ -42,6 +44,9 @@ class Interface(Frame):
 					load = load.resize((40, 40))
 					self.bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
 		self.bkg = self.bkg.rotate(90*(dir+1))
+		if save:
+			self.hist.append(self.bkg)
+			self.hist_time = len(self.hist)-1
 		render = ImageTk.PhotoImage(self.bkg)
 		img = Label(self, image=render)
 		img.image = render
@@ -76,6 +81,24 @@ class Interface(Frame):
 		load = load.resize((5, 42))
 		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p1),load)
 		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p1),load)
+	def key(self,event):
+		print ("pressed", repr(event.char))
+	def leftKey(self,event):
+		self.hist_time -= 1
+		self.hist_time = max(0,self.hist_time)
+		render = ImageTk.PhotoImage(self.hist[self.hist_time])
+		img = Label(self, image=render)
+		img.image = render
+		img.grid(row=0, column=0)
+		self.update_idletasks()
+	def rightKey(self,event):
+		self.hist_time += 1
+		self.hist_time = min(len(self.hist)-1,self.hist_time)
+		render = ImageTk.PhotoImage(self.hist[self.hist_time])
+		img = Label(self, image=render)
+		img.image = render
+		img.grid(row=0, column=0)
+		self.update_idletasks()
 
 	def callback(self,event):
 		if self.startGame and self.option != 'Two computers':
@@ -94,7 +117,7 @@ class Interface(Frame):
 				if self.a+' '+self.b not in allrules:
 					self.a = movexy
 					self.b = None
-					self.display_pieces(self.cb.table,dir=self.chess_up)
+					self.display_pieces(self.cb.table,dir=self.chess_up,save=False)
 					self.allowed_moves(allrules,movexy)
 				else:
 					self.cb.table = pieces.move(self.cb.table,self.a,self.b)
@@ -132,14 +155,16 @@ class Interface(Frame):
 
 	def start_game(self,option):
 		self.winfo_toplevel().title("Keivchess")
+		self.hist = []
+		self.hist_time = 0
 		self.checkmate = 0
 		self.option = option
 		self.a = None
 		self.last = None
 		if option != 'Two players':
-			self.comp = ai.Keivchess(-1)
+			self.comp = ai.Keivchess(2)
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(2),ai.Keivchess(1)]
+			self.comp = [ai.Keivchess(3),ai.Keivchess(2)]
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
@@ -222,5 +247,8 @@ def tabletomouse(x,y,dir):
 window.geometry("600x500")
 interface = Interface(window)
 window.bind("<Button-1>", interface.callback)
+window.bind("<Key>", interface.key)
+window.bind('<Left>', interface.leftKey)
+window.bind('<Right>', interface.rightKey)
 window.mainloop()
 interface.destroy()
