@@ -14,6 +14,7 @@ class Interface(Frame):
 		self.pack(fill=BOTH)
 		self.a = None
 		self.last = None
+		self.still = [1,1]
 		self.checkmate = 0
 		self.hist = []
 		self.hist_time = 0
@@ -38,8 +39,8 @@ class Interface(Frame):
 		self.bkg = Image.open("chessboard.jpg")
 		for i in range(8):
 			for j in range(8):
-				if table[j][i].name != '_':
-					load = Image.open(table[j][i].image)
+				if table[j,i] != 0:
+					load = Image.open(pieces.images[6+table[j,i]])
 					load = load.rotate(90*(dir+1))
 					load = load.resize((40, 40))
 					self.bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
@@ -104,7 +105,7 @@ class Interface(Frame):
 		if self.startGame and self.option != 'Two computers':
 			[x,y] = (mousetotable(event.x, event.y,self.chess_up))
 			movexy = pieces.mv(x,y)
-			allrules = pieces.allrules_ek(self.cb.table,self.last)
+			allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)
 			if self.a is None:
 				self.a = movexy
 				self.allowed_moves(allrules,movexy)
@@ -124,7 +125,7 @@ class Interface(Frame):
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.update_idletasks()
 					self.last = [self.a,self.b]		
-					allrules = pieces.allrules_ek(self.cb.table,self.last)					
+					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
 						self.winfo_toplevel().title("Checkmate!")
 						self.checkmate = 1
@@ -135,12 +136,12 @@ class Interface(Frame):
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 					elif not self.checkmate:
 						start = time.time()
-						cmove = self.comp.move(self.cb.table,self.last).split()
+						cmove = self.comp.move(self.cb.table,self.last,self.still).split()
 						print(time.time()-start,'s')
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
-						allrules = pieces.allrules_ek(self.cb.table,self.last)					
+						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 						if len(allrules)==0:
 							self.winfo_toplevel().title("Checkmate!")
 							self.checkmate = 1
@@ -161,6 +162,7 @@ class Interface(Frame):
 		self.option = option
 		self.a = None
 		self.last = None
+		self.still = [1,1]
 		if option != 'Two players':
 			self.comp = ai.Keivchess(2)
 		if option == 'Two computers':
@@ -180,7 +182,7 @@ class Interface(Frame):
 		self.display_pieces(self.cb.table,dir=self.chess_up)
 		self.update_idletasks()
 		if option == 'Play black':
-			cmove = self.comp.move(self.cb.table,self.last).split()
+			cmove = self.comp.move(self.cb.table,self.last,self.still).split()
 			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 			self.display_pieces(self.cb.table,dir=self.chess_up)
 			self.last = cmove
@@ -196,13 +198,13 @@ class Interface(Frame):
 			while not self.checkmate:
 				try:
 					start = time.time()
-					cmove = self.comp[turn].move(self.cb.table,self.last).split()
+					cmove = self.comp[turn].move(self.cb.table,self.last,self.still).split()
 					print(time.time()-start,'s')
 					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.last = cmove
 					
-					allrules = pieces.allrules_ek(self.cb.table,self.last)					
+					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
 						self.winfo_toplevel().title("Checkmate!")
 						self.checkmate = 1
