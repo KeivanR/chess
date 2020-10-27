@@ -27,6 +27,7 @@ def move(table,a,b,real=True):
 	y2=xy2[1]
 	if table2[x1][y1].name=='P' and x1!=x2 and table2[x2][y2].name=='_':
 		table2[x2][y1]=Empty()
+		
 	table2[x2][y2]=table2[x1][y1]
 	#promotion
 	if len(b)==3:
@@ -368,6 +369,8 @@ class Chessboard:
 		self.table = [Empty()]*8
 		for i in range(8):
 			self.table[i] = [Empty()]*8
+		self.blacks = []
+		self.whites = []
 	def black_init(self):
 		for i in range(8):
 			self.table[i][6]=Pawn(1)
@@ -379,6 +382,9 @@ class Chessboard:
 		self.table[5][7]=Bishop(1)
 		self.table[3][7]=Queen(1)
 		self.table[4][7]=King(1)
+		for i in range(8):
+			for j in range(2):
+				self.blacks.append([i,7-j])
 	def white_init(self):
 		for i in range(8):
 			self.table[i][1]=Pawn(0)
@@ -390,6 +396,9 @@ class Chessboard:
 		self.table[5][0]=Bishop(0)
 		self.table[3][0]=Queen(0)
 		self.table[4][0]=King(0)
+		for i in range(8):
+			for j in range(2):
+				self.whites.append([i,j])
 	def get(self,mv):
 		return self.table[xy(mv)[0]][xy(mv)[1]]
 	def display_table(self,dir=1):
