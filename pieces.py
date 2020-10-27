@@ -19,16 +19,12 @@ def move(table,a,b,real=True):
 	table2 = copy.deepcopy(table)
 	if a==b:
 		return table2
-	xy1=xy(a)
-	xy2=xy(b[0:2])
-	x1=xy1[0]
-	x2=xy2[0]
-	y1=xy1[1]
-	y2=xy2[1]
+	[x1,y1]=xy(a)
+	[x2,y2]=xy(b[0:2])
 	if table2[x1][y1].name=='P' and x1!=x2 and table2[x2][y2].name=='_':
 		table2[x2][y1]=Empty()
-		
 	table2[x2][y2]=table2[x1][y1]
+
 	#promotion
 	if len(b)==3:
 		if b[2] == 'N':
@@ -48,8 +44,8 @@ def move(table,a,b,real=True):
 		if x2-x1==-2:
 			table2[x1-1][y1]=table2[x1-4][y1]
 			table2[x1-4][y1]=Empty()
+
 	table2[x1][y1]=Empty()
-	
 	return table2
 def rules(table,m,last):
 	xy1=xy(m)
@@ -67,7 +63,7 @@ def allrules(table,last):
 	allr = []
 	for i in range(8):
 		for j in range(8):
-			if table[i][j].color == color:
+			if table[i][j].color==color:
 				for m in rules(table,mv(i,j),last):
 					allr.append(mv(i,j)+' '+m)
 	return allr
@@ -78,7 +74,7 @@ def exposed_king(table,last):
 		color = 1-table[xy(last[1])[0]][xy(last[1])[1]].color
 	for i in range(8):
 		for j in range(8):
-			if table[i][j].color == color:
+			if table[i][j].color==color:
 				for m in rules(table,mv(i,j),last):
 					if table[xy(m)[0]][xy(m)[1]].name=='K':
 						return 1
@@ -369,8 +365,6 @@ class Chessboard:
 		self.table = [Empty()]*8
 		for i in range(8):
 			self.table[i] = [Empty()]*8
-		self.blacks = []
-		self.whites = []
 	def black_init(self):
 		for i in range(8):
 			self.table[i][6]=Pawn(1)
@@ -382,9 +376,6 @@ class Chessboard:
 		self.table[5][7]=Bishop(1)
 		self.table[3][7]=Queen(1)
 		self.table[4][7]=King(1)
-		for i in range(8):
-			for j in range(2):
-				self.blacks.append([i,7-j])
 	def white_init(self):
 		for i in range(8):
 			self.table[i][1]=Pawn(0)
@@ -396,9 +387,6 @@ class Chessboard:
 		self.table[5][0]=Bishop(0)
 		self.table[3][0]=Queen(0)
 		self.table[4][0]=King(0)
-		for i in range(8):
-			for j in range(2):
-				self.whites.append([i,j])
 	def get(self,mv):
 		return self.table[xy(mv)[0]][xy(mv)[1]]
 	def display_table(self,dir=1):
@@ -423,7 +411,7 @@ class Chessgame:
 		while not a+' '+b in allrules:
 			a, b = input("Not allowed. Enter your move: ").split()
 		while 1:
-			self.cb.table = move(self.cb.table,a,b)
+			self.cb = move(self.cb.table,a,b)
 			chess_up = -chess_up
 			last = [a,b]
 			allrules = allrules_ek(self.cb.table,last)

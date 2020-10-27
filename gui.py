@@ -11,7 +11,6 @@ class Interface(Frame):
 		self.rowconfigure(0, weight=1)           
 		self.columnconfigure(0, weight=1) 
 		self.comp = None
-		self.option = None
 		self.pack(fill=BOTH)
 		self.a = None
 		self.last = None
@@ -25,13 +24,13 @@ class Interface(Frame):
 		self.bouton_quitter.grid(row=0, column=2)
         
 		self.bouton_tp = Button(self, text="Two players", fg="blue",command=lambda: self.start_game('Two players'))
+		self.bouton_tc = Button(self, text="Two computers", fg="blue",command=lambda: self.start_game('Two computers'))
 		self.bouton_w = Button(self, text="Play white", fg="white",command=lambda: self.start_game('Play white'))
 		self.bouton_b = Button(self, text="Play black", fg="black",command=lambda: self.start_game('Play black'))
-		self.bouton_tc = Button(self, text="Two computers", fg="black",command=lambda: self.start_game('Two computers'))
 		self.bouton_tp.grid(row=1, column=2,columnspan=1)
-		self.bouton_w.grid(row=2, column=2,columnspan=1)
-		self.bouton_b.grid(row=3, column=2,columnspan=1)
-		self.bouton_tc.grid(row=4, column=2,columnspan=1)
+		self.bouton_tc.grid(row=2, column=2,columnspan=1)
+		self.bouton_w.grid(row=3, column=2,columnspan=1)
+		self.bouton_b.grid(row=4, column=2,columnspan=1)
 
 	def display_pieces(self,table,dir=1):
 		self.bkg = Image.open("chessboard.jpg")
@@ -121,7 +120,7 @@ class Interface(Frame):
 						allrules = pieces.allrules_ek(self.cb.table,self.last)					
 						if len(allrules)==0:
 							self.winfo_toplevel().title("Checkmate!")
-							self.checkmate = 1	
+							self.checkmate = 1
 			if self.last is not None:
 				self.show_last()		
 			render = ImageTk.PhotoImage(self.bkg)
@@ -138,9 +137,9 @@ class Interface(Frame):
 		self.a = None
 		self.last = None
 		if option != 'Two players':
-			self.comp = ai.Keivchess(2)
+			self.comp = ai.Keivchess(-1)
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(3),ai.Keivchess(2)]
+			self.comp = [ai.Keivchess(2),ai.Keivchess(1)]
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
@@ -166,6 +165,7 @@ class Interface(Frame):
 			img.image = render
 			img.grid(row=0, column=0)
 			self.update_idletasks()
+
 		if self.option == 'Two computers':
 			turn = 0
 			while not self.checkmate:
@@ -195,6 +195,7 @@ class Interface(Frame):
 					break
 		
 		self.startGame = True
+
 		
 
 window = Tk()

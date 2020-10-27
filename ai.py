@@ -15,11 +15,11 @@ def rec_sum(table,last,color,k):
 	if k==0:
 		for m in allr:
 			table2 = pieces.move(table,m.split()[0],m.split()[1],real=False)
-			val.append(sum_value(table2))
+			val.append(sum_value(table))
 	else:
 		for m in allr:
 			table2 = pieces.move(table,m.split()[0],m.split()[1],real=False)
-			lasval = (sum_value(table2)+rec_sum(table2,[m.split()[0],m.split()[1]],1-color,k-1)[1])/2
+			lasval = (sum_value(table)+rec_sum(table2,[m.split()[0],m.split()[1]],1-color,k-1)[1])/2
 			val.append(lasval)
 	val = np.asarray(val)
 	if color == 0:
