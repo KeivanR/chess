@@ -141,7 +141,7 @@ class Interface(Frame):
 					elif not self.checkmate:
 						start = time.time()
 						cmove = self.comp.move(self.cb.table,self.last,self.still).split()
-						print(time.time()-start,'s')
+						print(int(1000*(time.time()-start))/1000,'s')
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
@@ -173,7 +173,7 @@ class Interface(Frame):
 		if option != 'Two players':
 			self.comp = ai.Keivchess(3)
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(4),ai.Keivchess(3)]
+			self.comp = [ai.Keivchess(3),ai.Keivchess(3)]
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
@@ -206,7 +206,7 @@ class Interface(Frame):
 				try:
 					start = time.time()
 					cmove = self.comp[turn].move(self.cb.table,self.last,self.still).split()
-					print(time.time()-start,'s')
+					print(int(1000*(time.time()-start))/1000,'s')
 					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.last = cmove

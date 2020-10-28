@@ -85,9 +85,9 @@ def exposed_king(table,last,still,no_move=False):
 	[x,y] = [int(x),int(y)]
 
 	#pawn
-	if oncb(x-1,y+color) and table[x-1,y+color]==1*color:
+	if oncb(x-1,y-color) and table[x-1,y-color]==1*color:
 		return 1
-	if oncb(x+1,y+color) and table[x+1,y+color]==1*color:
+	if oncb(x+1,y-color) and table[x+1,y-color]==1*color:
 		return 1
 	#rook/queen
 	k = 1
