@@ -25,7 +25,7 @@ def move(table,a,b,still,real=True):
 	if np.abs(table2[x1][y1])==1 and x1!=x2 and table2[x2][y2]==0:
 		table2[x2][y1]=0
 	table2[x2][y2]=table2[x1][y1]
-	color = 2*(table[x2,y2]>0)-1
+	color = 2*(table[x1,y1]>0)-1
 	#promotion
 	if len(b)==3:
 		if b[2] == 'N':
