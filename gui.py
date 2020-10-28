@@ -128,7 +128,10 @@ class Interface(Frame):
 					self.last = [self.a,self.b]		
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
-						self.winfo_toplevel().title("Checkmate!")
+						if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
+							self.winfo_toplevel().title("Checkmate!")
+						else:
+							self.winfo_toplevel().title("Stalemate!")
 						self.checkmate = 1
 					
 					if self.option == 'Two players':
@@ -144,7 +147,10 @@ class Interface(Frame):
 						self.last = cmove		
 						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 						if len(allrules)==0:
-							self.winfo_toplevel().title("Checkmate!")
+							if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
+								self.winfo_toplevel().title("Checkmate!")
+							else:
+								self.winfo_toplevel().title("Stalemate!")
 							self.checkmate = 1
 			if self.last is not None:
 				self.show_last()		
@@ -207,7 +213,10 @@ class Interface(Frame):
 					
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
-						self.winfo_toplevel().title("Checkmate!")
+						if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
+							self.winfo_toplevel().title("Checkmate!")
+						else:
+							self.winfo_toplevel().title("Stalemate!")
 						self.checkmate = 1
 							
 					if self.last is not None:

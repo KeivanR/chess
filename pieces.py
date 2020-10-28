@@ -73,11 +73,13 @@ def allrules(table,last,still):
 				for m in rules(table,mv(i,j),last,still):
 					allr.append(mv(i,j)+' '+m)
 	return allr
-def exposed_king(table,last,still):
+def exposed_king(table,last,still,no_move=False):
 	if last is None:
 		color = 1
 	else:
 		color = 2*(table[xy(last[1])[0],xy(last[1])[1]]<0)-1
+	if no_move:
+		color = -color
 
 	[x,y] = np.where(table==-6*color)
 	[x,y] = [int(x),int(y)]

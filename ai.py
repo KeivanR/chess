@@ -11,7 +11,7 @@ def sum_value(table):
 def rec_sum(table,last,still,color,k,disp=False):
 	allr = pieces.allrules_ek(table,last,still)
 	val = []
-	if len(allr)==0:
+	if len(allr)==0 and pieces.exposed_king(table,last,still,no_move=True):
 		return [None,100*(2*color-1)]
 	if k==0:
 		for m in allr:
