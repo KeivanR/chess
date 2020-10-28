@@ -1,6 +1,7 @@
 import numpy as np
 import pieces
 import random
+import time
 def sum_value(table):
 	s = 0
 	for i in range(8):
@@ -14,17 +15,22 @@ def rec_sum(table,last,still,color,k,disp=False):
 		return [None,100*(2*color-1)]
 	if k==0:
 		for m in allr:
-			table2 = pieces.move(table,m.split()[0],m.split()[1],still,real=False)
+			start = time.time()
+			still2 = still.copy()
+			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
 			val.append(sum_value(table2))
 			#print('(',k,')',m,': ',val[-1])
 	else:
 		for m in allr:
-			table2 = pieces.move(table,m.split()[0],m.split()[1],still,real=False)
-			lasval = (sum_value(table2)+rec_sum(table2,[m.split()[0],m.split()[1]],still,-color,k-1)[1])
+			still2 = still.copy()
+			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+			lasval = (sum_value(table2)+rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1)[1])
+
 			#for i in range(k):
 				#print('   ',end='')
 			#print('(',k,')',m,': ',lasval)
 			val.append(lasval)
+
 	val = np.asarray(val)
 	if color>0:
 		return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]

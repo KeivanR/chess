@@ -38,8 +38,7 @@ def move(table,a,b,still,real=True):
 			table2[x2][y2] = 5*color
 	#castling
 	if np.abs(table2[x1][y1])==6:
-		if real:
-			still[table2[x1][y1]>0] = 0
+		still[table2[x1][y1]>0] = 0
 		if x2-x1==2:
 			table2[x1+1][y1]=table2[x1+3][y1]
 			table2[x1+3][y1]=0
@@ -78,13 +77,97 @@ def exposed_king(table,last,still):
 	if last is None:
 		color = 1
 	else:
-		color = -table[xy(last[1])[0],xy(last[1])[1]]
-	for i in range(8):
-		for j in range(8):
-			if table[i][j]*color>0:
-				for m in rules(table,mv(i,j),last,still):
-					if np.abs(table[xy(m)[0]][xy(m)[1]])==6:
-						return 1
+		color = 2*(table[xy(last[1])[0],xy(last[1])[1]]<0)-1
+
+	[x,y] = np.where(table==-6*color)
+	[x,y] = [int(x),int(y)]
+
+	#pawn
+	if oncb(x-1,y+color) and table[x-1,y+color]==1*color:
+		return 1
+	if oncb(x+1,y+color) and table[x+1,y+color]==1*color:
+		return 1
+	#rook/queen
+	k = 1
+	while(y+k<7 and table[x][y+k]==0):
+		k = k+1
+	if oncb(x,y+k) and table[x][y+k] in [2*color,5*color]:
+		return 1
+	k = 1
+	while(y-k>0 and table[x][y-k]==0):
+		k = k+1
+	if oncb(x,y-k) and table[x][y-k] in [2*color,5*color]:
+		return 1
+	k = 1
+	while(x+k<7 and table[x+k][y]==0):
+		k = k+1
+	if oncb(x+k,y) and table[x+k][y] in [2*color,5*color]:
+		return 1
+	k = 1
+	while(x-k>0 and table[x-k][y]==0):
+		k = k+1
+	if oncb(x-k,y) and table[x-k][y] in [2*color,5*color]:
+		return 1
+
+	#bishop/queen
+	k = 1
+	while(y+k<7 and x+k<7 and table[x+k][y+k]==0):
+		k = k+1
+	if oncb(x+k,y+k) and table[x+k][y+k] in [4*color,5*color]:
+		return 1
+	k = 1
+	while(y-k>0 and x+k<7 and table[x+k][y-k]==0):
+		k = k+1
+	if oncb(x+k,y-k) and table[x+k][y-k] in [4*color,5*color]:
+		return 1
+	k = 1
+	while(y+k<7 and x-k>0 and table[x-k][y+k]==0):
+		k = k+1
+	if oncb(x-k,y+k) and table[x-k][y+k] in [4*color,5*color]:
+		return 1
+	k = 1
+	while(y-k>0 and x-k>0 and table[x-k][y-k]==0):
+		k = k+1
+	if oncb(x-k,y-k) and table[x-k][y-k] in [4*color,5*color]:
+		return 1
+
+	
+	#knight
+	if oncb(x-2,y-1) and table[x-2,y-1]==3*color:
+		return 1
+	if oncb(x-2,y+1) and table[x-2,y+1]==3*color:
+		return 1
+	if oncb(x-1,y-2) and table[x-1,y-2]==3*color:
+		return 1
+	if oncb(x-1,y+2) and table[x-1,y+2]==3*color:
+		return 1
+	if oncb(x+1,y-2) and table[x+1,y-2]==3*color:
+		return 1
+	if oncb(x+1,y+2) and table[x+1,y+2]==3*color:
+		return 1
+	if oncb(x+2,y-1) and table[x+2,y-1]==3*color:
+		return 1
+	if oncb(x+2,y+1) and table[x+2,y+1]==3*color:
+		return 1
+
+	#king
+	if oncb(x-1,y-1) and table[x-1,y-1]==6*color:
+		return 1
+	if oncb(x-1,y) and table[x-1,y]==6*color:
+		return 1
+	if oncb(x-1,y+1) and table[x-1,y+1]==6*color:
+		return 1
+	if oncb(x,y-1) and table[x,y-1]==6*color:
+		return 1
+	if oncb(x,y+1) and table[x,y+1]==6*color:
+		return 1
+	if oncb(x+1,y-1) and table[x+1,y-1]==6*color:
+		return 1
+	if oncb(x+1,y) and table[x+1,y]==6*color:
+		return 1
+	if oncb(x+1,y+1) and table[x+1,y+1]==6*color:
+		return 1
+		
 	return 0
 def allrules_ek(table,last,still):
 	rules = []
@@ -92,6 +175,7 @@ def allrules_ek(table,last,still):
 	for m in allr:
 		[x1,y1]=xy(m.split()[0])
 		[x2,y2]=xy(m.split()[1])
+		start = time.time()
 		table2 = move(table,m.split()[0],m.split()[1],still,real=False)
 		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
 			if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
@@ -103,6 +187,7 @@ def allrules_ek(table,last,still):
 			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still,real=False)
 			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
 				rules.append(m)
+
 	return rules
 
 
