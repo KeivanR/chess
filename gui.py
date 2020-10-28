@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 import pieces
 import ai
 import time
+import numpy as np
 
 class Interface(Frame):
 	def __init__(self, fenetre, **kwargs):
@@ -110,7 +111,7 @@ class Interface(Frame):
 				self.a = movexy
 				self.allowed_moves(allrules,movexy)
 			else:
-				if self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]].name=='P' and y==3.5+3.5*self.chess_up:
+				if np.abs(self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]])==1 and y==3.5+3.5*self.chess_up:
 					prom = input('Promotion:N,B,R,Q?')
 					self.b = movexy+prom
 				else:
@@ -121,7 +122,7 @@ class Interface(Frame):
 					self.display_pieces(self.cb.table,dir=self.chess_up,save=False)
 					self.allowed_moves(allrules,movexy)
 				else:
-					self.cb.table = pieces.move(self.cb.table,self.a,self.b)
+					self.cb.table = pieces.move(self.cb.table,self.a,self.b,self.still)
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.update_idletasks()
 					self.last = [self.a,self.b]		
@@ -138,7 +139,7 @@ class Interface(Frame):
 						start = time.time()
 						cmove = self.comp.move(self.cb.table,self.last,self.still).split()
 						print(time.time()-start,'s')
-						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
+						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
 						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
@@ -183,7 +184,7 @@ class Interface(Frame):
 		self.update_idletasks()
 		if option == 'Play black':
 			cmove = self.comp.move(self.cb.table,self.last,self.still).split()
-			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
+			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 			self.display_pieces(self.cb.table,dir=self.chess_up)
 			self.last = cmove
 			self.show_last()
@@ -200,7 +201,7 @@ class Interface(Frame):
 					start = time.time()
 					cmove = self.comp[turn].move(self.cb.table,self.last,self.still).split()
 					print(time.time()-start,'s')
-					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1])
+					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.last = cmove
 					

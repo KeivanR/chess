@@ -16,7 +16,7 @@ def oncb(x,y):
 def appendin(pos,x,y):
 	if oncb(x,y):
 		pos.append(mv(x,y))
-def move(table,a,b,real=True):
+def move(table,a,b,still,real=True):
 	table2 = table.copy()
 	if a==b:
 		return table2
@@ -37,8 +37,9 @@ def move(table,a,b,real=True):
 		if b[2] == 'Q':
 			table2[x2][y2] = 5*color
 	#castling
-	if real and np.abs(table2[x1][y1])==6:
-		still[table2[x1][y1]>0] = 0
+	if np.abs(table2[x1][y1])==6:
+		if real:
+			still[table2[x1][y1]>0] = 0
 		if x2-x1==2:
 			table2[x1+1][y1]=table2[x1+3][y1]
 			table2[x1+3][y1]=0
@@ -63,16 +64,24 @@ def rules(table,m,last,still):
 		return rules_king(x,y,table,still)
 def allrules(table,last,still):
 	allr = []
+	if last is None:
+		color = 1
+	else:
+		color = -table[xy(last[1])[0],xy(last[1])[1]]
 	for i in range(8):
 		for j in range(8):
-			if table[i][j]*table[xy(last[1])[0],xy(last[1])[1]]<0:
+			if table[i][j]*color>0:
 				for m in rules(table,mv(i,j),last,still):
 					allr.append(mv(i,j)+' '+m)
 	return allr
 def exposed_king(table,last,still):
+	if last is None:
+		color = 1
+	else:
+		color = -table[xy(last[1])[0],xy(last[1])[1]]
 	for i in range(8):
 		for j in range(8):
-			if table[i][j]*table[xy(last[1])[0],xy(last[1])[1]]<0:
+			if table[i][j]*color>0:
 				for m in rules(table,mv(i,j),last,still):
 					if np.abs(table[xy(m)[0]][xy(m)[1]])==6:
 						return 1
@@ -83,15 +92,15 @@ def allrules_ek(table,last,still):
 	for m in allr:
 		[x1,y1]=xy(m.split()[0])
 		[x2,y2]=xy(m.split()[1])
-		table2 = move(table,m.split()[0],m.split()[1],real=False)
+		table2 = move(table,m.split()[0],m.split()[1],still,real=False)
 		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
 			if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
 				rules.append(m)
 		else:
 			to = int((x2-x1)/np.abs(x2-x1))
-			table2 = move(table,mv(x1,y1),mv(x1,y1),real=False)
-			table3 = move(table,mv(x1,y1),mv(x1+to,y1),real=False)
-			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),real=False)
+			table2 = move(table,mv(x1,y1),mv(x1,y1),still,real=False)
+			table3 = move(table,mv(x1,y1),mv(x1+to,y1),still,real=False)
+			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still,real=False)
 			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
 				rules.append(m)
 	return rules
@@ -310,7 +319,7 @@ def rules_king(x,y,table,still):
 				pos.append(mv(x-2,y))
 	return pos
 images = ['black_king.png','black_queen.png','black_bishop.png','black_knight.png','black_rook.png','black_pawn.png',None,'white_pawn.png','white_rook.png','white_knight.png','white_bishop.png','white_queen.png','white_king.png']
-points = [-100,-9,-3,-3,-1,0,1,5,3,3,9,100]
+points = [-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100]
 class Chessboard:
 	def __init__(self):
 		self.table = np.zeros((8,8))
