@@ -105,6 +105,9 @@ class Interface(Frame):
 	def callback(self,event):
 		if self.startGame and self.option != 'Two computers':
 			[x,y] = (mousetotable(event.x, event.y,self.chess_up))
+			if not pieces.oncb(x,y):
+				self.a = self.b = None
+				return 0
 			movexy = pieces.mv(x,y)
 			allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)
 			if self.a is None:
@@ -171,7 +174,7 @@ class Interface(Frame):
 		self.last = None
 		self.still = [1,1]
 		if option != 'Two players':
-			self.comp = ai.Keivchess(3)
+			self.comp = ai.Keivchess(5)
 		if option == 'Two computers':
 			self.comp = [ai.Keivchess(3),ai.Keivchess(4)]
 		if option == 'Play black':
