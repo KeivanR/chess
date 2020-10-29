@@ -410,7 +410,11 @@ def rules_king(x,y,table,still):
 				pos.append(mv(x-2,y))
 	return pos
 images = ['black_king.png','black_queen.png','black_bishop.png','black_knight.png','black_rook.png','black_pawn.png',None,'white_pawn.png','white_rook.png','white_knight.png','white_bishop.png','white_queen.png','white_king.png']
-points = [-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100]
+points = np.asarray([-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100])
+table_points = np.zeros((8,8))
+for i in range(8):
+	for j in range(8):
+		table_points[i,j] = (7-(np.abs(i-3.5)+np.abs(j-3.5)))/15
 class Chessboard:
 	def __init__(self):
 		self.table = np.zeros((8,8))
