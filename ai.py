@@ -21,10 +21,10 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,disp=False):
 	val = []
 	if len(allr)==0:
 		if pieces.exposed_king(table,last,still,no_move=True):
-			print('future checkmate possible')
+			#print('future checkmate possible')
 			return [None,100*(2*color-1)]
 		else:
-			print('future stalemate possible')
+			#print('future stalemate possible')
 			return [None,sum_value(table)]
 	if noha==noha_lim:
 		#print('noha_lim reached')
@@ -54,8 +54,9 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,disp=False):
 	else:
 		return [allr[np.random.choice(np.flatnonzero(val == min(val)))],min(val)]
 class Keivchess:
-	def __init__(self,level):
+	def __init__(self,level,noha_lim):
 		self.level = level
+		self.noha_lim = noha_lim
 	def move(self,table,last,still):
 		if self.level==-1:
 			allrules = pieces.allrules_ek(table,last,still)
@@ -68,6 +69,6 @@ class Keivchess:
 				color=1
 			else:
 				color = -table[pieces.xy(last[1])[0]][pieces.xy(last[1])[1]]
-			res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=2,disp=True)
+			res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim,disp=True)
 			print('AI assessment: ',res[1]/self.level)
 			return res[0]
