@@ -2,6 +2,8 @@ import numpy as np
 import pieces
 import random
 import time
+from anytree import Node, RenderTree
+
 def sum_value(table):
 	return np.sum(pieces.points[6+table])
 def sum_value2(table):
@@ -16,7 +18,58 @@ def sum_value2(table):
 					s+=pieces.points[6+table[i][j]]+pieces.table_points[i,j]*color
 	return s
 
-def rec_sum(table,last,still,color,k,noha,noha_lim,disp=False):
+def rec_sum(table,last,still,color,k,noha,noha_lim):
+	allr = pieces.allrules_ek(table,last,still)
+	val = []
+	if len(allr)==0:
+		if pieces.exposed_king(table,last,still,no_move=True):
+			#print('future checkmate possible')
+			return [None,100*(2*color-1)]
+		else:
+			#print('future stalemate possible')
+			return [None,sum_value(table)]
+	if noha==noha_lim:
+		#print('noha_lim reached at level', k)
+		return [None,sum_value(table)]
+	if k==0:
+		for m in allr:
+			start = time.time()
+			still2 = still.copy()
+			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+			val.append(sum_value(table2))
+		val = np.asarray(val)
+		if color>0:
+			return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]
+		else:
+			return [allr[np.random.choice(np.flatnonzero(val == min(val)))],min(val)]
+	else:
+		shine = []
+		for m in allr:
+			still2 = still.copy()
+			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+			if sum_value(table2) == sum_value(table):
+				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim)
+			else:
+				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim)
+			val.append(rs[1])
+			shine.append(pieces.allrules_ek_shine(table2,last,still))
+		allr = np.asarray(allr)
+		shine = np.asarray(shine)
+		val = np.asarray(val)
+		if color>0:
+			allrmax = allr[np.flatnonzero(val == max(val))]
+			shinemax = shine[np.flatnonzero(val == max(val))]
+			if (k==3): 
+				[print([allrmax[i],shinemax[i]]) for i in range(len(allrmax))]
+			return [allrmax[np.random.choice(np.flatnonzero(shinemax == max(shinemax)))],max(val)]
+		else:
+			allrmin = allr[np.flatnonzero(val == min(val))]
+			shinemin = shine[np.flatnonzero(val == min(val))]
+			if (k==3): 
+				[print([allrmin[i],shinemin[i]]) for i in range(len(allrmin))]
+			return [allrmin[np.random.choice(np.flatnonzero(shinemin == max(shinemin)))],min(val)]
+	
+def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,disp=False):
 	allr = pieces.allrules_ek(table,last,still)
 	val = []
 	if len(allr)==0:
@@ -39,11 +92,13 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,disp=False):
 		for m in allr:
 			still2 = still.copy()
 			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+			node2 = Node(m,parent=node)
 			if sum_value(table2) == sum_value(table):
-				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim)
+				rs = rec_sum(table2,node2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim)
 			else:
-				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim)
-			lasval = (sum_value(table2)+rs[1])
+				rs = rec_sum(table2,node2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim)
+			lasval = rs[1]
+			
 			#if k==2:
 			#	print(m,int(100*lasval)/100)
 			#	print('details: ',int(100*sum_value2(table2))/100,', ',rs[0],' : ',int(100*rs[1])/100)
@@ -53,6 +108,7 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,disp=False):
 		return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]
 	else:
 		return [allr[np.random.choice(np.flatnonzero(val == min(val)))],min(val)]
+
 class Keivchess:
 	def __init__(self,level,noha_lim):
 		self.level = level
@@ -69,6 +125,6 @@ class Keivchess:
 				color=1
 			else:
 				color = -table[pieces.xy(last[1])[0]][pieces.xy(last[1])[1]]
-			res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim,disp=True)
-			print('AI assessment: ',res[1]/self.level)
+			res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
+			print('AI assessment: ',res[1])
 			return res[0]

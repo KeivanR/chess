@@ -1,6 +1,9 @@
 import numpy as np
 import copy
 import time
+def draw(table):
+	atable = np.abs(table)
+	return (not 1 in atable and not 2 in atable and not 4 in atable and not 5 in atable)
 def notallowed():
 	print()
 	print('move not allowed')
@@ -195,6 +198,31 @@ def allrules_ek(table,last,still):
 				rules.append(m)
 
 	return rules
+
+def allrules_ek_shine(table,last,still):
+	shine = 0
+	allr = allrules(table,last,still)
+	for m in allr:
+		[x1,y1]=xy(m.split()[0])
+		[x2,y2]=xy(m.split()[1])
+		start = time.time()
+		still2 = still.copy()
+		table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
+		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
+			if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
+				shine += 1/points[6+np.abs(table[x1][y1])]
+		else:
+			to = int((x2-x1)/np.abs(x2-x1))
+			still2 = still.copy()
+			table2 = move(table,mv(x1,y1),mv(x1,y1),still2,real=False)
+			still2 = still.copy()
+			table3 = move(table,mv(x1,y1),mv(x1+to,y1),still2,real=False)
+			still2 = still.copy()
+			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still2,real=False)
+			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
+				shine += 1/points[6+np.abs(table[x1][y1])]
+
+	return shine
 
 
 def rules_pawn(x,y,last,table):

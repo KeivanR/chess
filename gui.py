@@ -174,7 +174,7 @@ class Interface(Frame):
 		self.last = None
 		self.still = [1,1]
 		if option != 'Two players':
-			self.comp = ai.Keivchess(5,2)
+			self.comp = ai.Keivchess(4,2)
 		if option == 'Two computers':
 			self.comp = [ai.Keivchess(5,2),ai.Keivchess(3,3)]
 		if option == 'Play black':
@@ -221,7 +221,9 @@ class Interface(Frame):
 						else:
 							self.winfo_toplevel().title("Stalemate!")
 						self.checkmate = 1
-							
+					if pieces.draw(self.cb.table):
+						print("DRAW")
+						break
 					if self.last is not None:
 						self.show_last()		
 					render = ImageTk.PhotoImage(self.bkg)
