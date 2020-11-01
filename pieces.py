@@ -426,12 +426,7 @@ def rules_king(x,y,table,still):
 		pos.append(mv(x+1,y))
 	if oncb(x+1,y+1) and table[x+1,y+1]*table[x,y]<=0:
 		pos.append(mv(x+1,y+1))
-	if still[0] and table[x,y]<0:
-		if table[x+1,y]==0 and table[x+2,y]==0:
-				pos.append(mv(x+2,y))
-		if table[x-1,y]==0 and table[x-2,y]==0:
-				pos.append(mv(x-2,y))
-	if still[1] and table[x,y]>0:
+	if still[0] and table[x,y]<0 or still[1] and table[x,y]>0:
 		if table[x+1,y]==0 and table[x+2,y]==0:
 				pos.append(mv(x+2,y))
 		if table[x-1,y]==0 and table[x-2,y]==0:
