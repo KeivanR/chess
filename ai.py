@@ -49,6 +49,8 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 
 		val = np.asarray(val)
 		if not shine_mode:
+			if k==3:
+				print('before move: ',pieces.allrules_ek_shine(table2,last,still2))
 			if color>0:
 				return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]
 			else:
@@ -60,6 +62,8 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 			for m in allrmax:
 				still2 = still.copy()
 				table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+				if pieces.iscastle(m,table):
+					return [m,max(val)]
 				shine.append(pieces.allrules_ek_shine(table2,last,still2))
 			shine = np.asarray(shine)
 			if (k==3): 
@@ -70,6 +74,8 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 			for m in allrmin:
 				still2 = still.copy()
 				table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+				if pieces.iscastle(m,table):
+					return [m,min(val)]
 				shine.append(pieces.allrules_ek_shine(table2,last,still2))
 			shine = np.asarray(shine)
 			if (k==3): 
@@ -150,7 +156,7 @@ class Keivchess:
 			if last is None:
 				color=1
 			else:
-				color = -table[pieces.xy(last[1])[0]][pieces.xy(last[1])[1]]
+				color = -table[pieces.xy(last[1])[0]][pieces.xy(last[1])[1]]/np.abs(table[pieces.xy(last[1])[0]][pieces.xy(last[1])[1]])
 			if self.tree:
 				res = rec_sum_tree(table,self.node,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
 				self.update_tree(res[0])

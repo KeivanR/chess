@@ -19,6 +19,11 @@ def oncb(x,y):
 def appendin(pos,x,y):
 	if oncb(x,y):
 		pos.append(mv(x,y))
+def iscastle(move,table):
+	a = xy(move.split()[0])
+	b = xy(move.split()[1])
+	return np.abs(table[a[0],a[1]])==6 and np.abs(a[0]-b[0]) == 2
+
 def move(table,a,b,still,real=True):
 	table2 = table.copy()
 	if a==b:
@@ -429,11 +434,11 @@ def rules_king(x,y,table,still):
 	if still[0] and table[x,y]<0 or still[1] and table[x,y]>0:
 		if table[x+1,y]==0 and table[x+2,y]==0:
 				pos.append(mv(x+2,y))
-		if table[x-1,y]==0 and table[x-2,y]==0:
+		if table[x-1,y]==0 and table[x-2,y]==0 and table[x-3,y]==0:
 				pos.append(mv(x-2,y))
 	return pos
 
-control_strength = [0,4,2,3,2,-1,-1]
+control_strength = [0,2,2,3,2,-0.1,0.1]
 images = ['black_king.png','black_queen.png','black_bishop.png','black_knight.png','black_rook.png','black_pawn.png',None,'white_pawn.png','white_rook.png','white_knight.png','white_bishop.png','white_queen.png','white_king.png']
 points = np.asarray([-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100])
 table_points = np.zeros((8,8))
