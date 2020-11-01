@@ -19,6 +19,7 @@ class Interface(Frame):
 		self.checkmate = 0
 		self.hist = []
 		self.hist_time = 0
+		self.taken = []
 
 		self.cb = pieces.Chessboard()
 		self.startGame = False
@@ -46,6 +47,19 @@ class Interface(Frame):
 					load = load.resize((40, 40))
 					self.bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
 		self.bkg = self.bkg.rotate(90*(dir+1))
+		w = 0
+		b = 0
+		for i in range(len(self.taken)):
+			piece = self.taken[i]
+			if piece<0:
+				mouse = tabletomouse(8,3.5-3.5*dir+b*dir,1)
+				b+=0.45
+			else:
+				mouse = tabletomouse(8,3.5+3.5*dir-w*dir,1)
+				w+=0.45
+			load = Image.open(pieces.images[6+piece])
+			load = load.resize((30, 30))
+			self.bkg.paste(load,(mouse[0],mouse[1]),load)
 		if save:
 			self.hist.append(self.bkg)
 			self.hist_time = len(self.hist)-1
@@ -83,6 +97,10 @@ class Interface(Frame):
 		load = load.resize((5, 42))
 		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p1),load)
 		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p1),load)
+	def add_taken(self,piece):
+		if piece!=0:
+			self.taken.append(piece)
+			self.taken.sort()
 	def key(self,event):
 		print ("pressed", repr(event.char))
 	def leftKey(self,event):
@@ -125,7 +143,9 @@ class Interface(Frame):
 					self.display_pieces(self.cb.table,dir=self.chess_up,save=False)
 					self.allowed_moves(allrules,movexy)
 				else:
+					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,self.a,self.b,self.still)
+					self.add_taken(s-np.sum(self.cb.table))
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.update_idletasks()
 					self.last = [self.a,self.b]		
@@ -146,7 +166,9 @@ class Interface(Frame):
 						start = time.time()
 						cmove = self.comp.move(self.cb.table,self.last,self.still).split()
 						print(int(1000*(time.time()-start))/1000,'s')
+						s = np.sum(self.cb.table)
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+						self.add_taken(s-np.sum(self.cb.table))
 						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
 						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
@@ -174,10 +196,11 @@ class Interface(Frame):
 		self.a = None
 		self.last = None
 		self.still = [1,1]
+		self.taken = []
 		if option != 'Two players':
 			self.comp = ai.Keivchess(4,2,True)
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(3,3,False),ai.Keivchess(3,3,True)]
+			self.comp = [ai.Keivchess(3,3,False),ai.Keivchess(3,2,True)]
 		if option == 'Play black':
 			self.chess_up=-1
 		else:
@@ -194,7 +217,9 @@ class Interface(Frame):
 		self.update_idletasks()
 		if option == 'Play black':
 			cmove = self.comp.move(self.cb.table,self.last,self.still).split()
+			s = np.sum(self.cb.table)
 			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+			self.add_taken(s-np.sum(self.cb.table))
 			self.display_pieces(self.cb.table,dir=self.chess_up)
 			self.last = cmove
 			self.show_last()
@@ -211,7 +236,9 @@ class Interface(Frame):
 					start = time.time()
 					cmove = self.comp[turn].move(self.cb.table,self.last,self.still).split()
 					print(int(1000*(time.time()-start))/1000,'s')
+					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+					self.add_taken(s-np.sum(self.cb.table))
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.last = cmove
 					
