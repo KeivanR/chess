@@ -177,7 +177,7 @@ class Interface(Frame):
 		if option != 'Two players':
 			self.comp = ai.Keivchess(4,2,True)
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(4,2,False),ai.Keivchess(4,2,True)]
+			self.comp = [ai.Keivchess(3,3,False),ai.Keivchess(3,3,True)]
 		if option == 'Play black':
 			self.chess_up=-1
 		else:

@@ -22,7 +22,7 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 	val = []
 	if len(allr)==0:
 		if pieces.exposed_king(table,last,still,no_move=True):
-			return [None,100*(2*color-1)]
+			return [None,-100*color]
 		else:
 			return [None,sum_value(table)]
 	if noha==noha_lim:
