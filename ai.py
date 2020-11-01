@@ -2,7 +2,7 @@ import numpy as np
 import pieces
 import random
 import time
-from anytree import Node
+from anytree import Node,search
 def sum_value(table):
 	return np.sum(pieces.points[6+table])
 def sum_value2(table):
@@ -79,8 +79,15 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 				[print([allrmin[i],shine[i]]) for i in range(len(allrmin))]
 			return [allrmin[np.random.choice(np.flatnonzero(shine == max(shine)))],min(val)]
 	
-def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,disp=False):
-	allr = pieces.allrules_ek(table,last,still)
+def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
+	if len(node.children) == 0:
+		if (k>1):
+			print("LEVEL ",k)
+		allr = pieces.allrules_ek(table,last,still)
+		node.children = [Node(allr[i]) for i in range(len(allr))]
+	allr = node.children
+	#print(node)
+	#print(node.children)
 	val = []
 	if len(allr)==0:
 		if pieces.exposed_king(table,last,still,no_move=True):
@@ -91,37 +98,53 @@ def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,disp=False):
 			return [None,sum_value(table)]
 	if noha==noha_lim:
 		#print('noha_lim reached')
-		return [None,sum_value(table)]
+		if create:
+			return node
+		else:
+			return [None,sum_value(table)]
 	if k==0:
 		for m in allr:
 			start = time.time()
 			still2 = still.copy()
-			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
-			node2 = Node(m,parent=node)
+			move = m.name
+			table2 = pieces.move(table,move.split()[0],move.split()[1],still2,real=False)
+			node2 = Node(move,parent=node)	
 			val.append(sum_value(table2))
 	else:
 		for m in allr:
 			still2 = still.copy()
-			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
-			node2 = Node(m,parent=node)
+			move = m.name
+			table2 = pieces.move(table,move.split()[0],move.split()[1],still2,real=False)
 			if sum_value(table2) == sum_value(table):
-				rs = rec_sum_tree(table2,node2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim)
+				rs = rec_sum_tree(table2,m,[move.split()[0],move.split()[1]],still2,-color,k-1,noha+1,noha_lim,create)
 			else:
-				rs = rec_sum_tree(table2,node2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim)
-			lasval = rs[1]
-			val.append(lasval)
-	val = np.asarray(val)
-	if color>0:
-		return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]
+				rs = rec_sum_tree(table2,m,[move.split()[0],move.split()[1]],still2,-color,k-1,noha,noha_lim,create)
+			if not create:
+				val.append(rs[1])
+	if create:
+		return node
 	else:
-		return [allr[np.random.choice(np.flatnonzero(val == min(val)))],min(val)]
+		val = np.asarray(val)
+		if color>0:
+			return [allr[np.random.choice(np.flatnonzero(val == max(val)))].name,max(val)]
+		else:
+			return [allr[np.random.choice(np.flatnonzero(val == min(val)))].name,min(val)]
+
 
 class Keivchess:
-	def __init__(self,level,noha_lim,shine_mode):
+	def __init__(self,level,noha_lim,shine_mode,tree):
 		self.level = level
 		self.noha_lim = noha_lim
 		self.shine_mode = shine_mode
-		self.node = Node(None)
+		self.tree = tree
+		if tree:
+			cb = pieces.Chessboard()
+			cb.white_init()
+			cb.black_init()
+			self.node = rec_sum_tree(cb.table,Node(None),None,[1,1],1,self.level-1,noha=0,noha_lim=self.noha_lim,create =True)
+	def update_tree(self,move):
+		if self.tree:
+			self.node = search.findall_by_attr(self.node, move,maxlevel=2)[0]
 	def move(self,table,last,still):
 		if self.level==-1:
 			allrules = pieces.allrules_ek(table,last,still)
@@ -134,7 +157,12 @@ class Keivchess:
 				color=1
 			else:
 				color = -table[pieces.xy(last[1])[0]][pieces.xy(last[1])[1]]
-			#res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim,shine_mode=self.shine_mode)
-			res = rec_sum_tree(table,self.node,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
+			if self.tree:
+				res = rec_sum_tree(table,self.node,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
+				self.update_tree(res[0])
+			else:
+				res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim,shine_mode=self.shine_mode)
+
 			print('AI(',color,') assessment: ',res[1])
 			return res[0]
+
