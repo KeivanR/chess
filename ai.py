@@ -22,17 +22,13 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 	val = []
 	if len(allr)==0:
 		if pieces.exposed_king(table,last,still,no_move=True):
-			#print('future checkmate possible')
 			return [None,100*(2*color-1)]
 		else:
-			#print('future stalemate possible')
 			return [None,sum_value(table)]
 	if noha==noha_lim:
-		#print('noha_lim reached at level', k)
 		return [None,sum_value(table)]
 	if k==0:
 		for m in allr:
-			start = time.time()
 			still2 = still.copy()
 			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
 			val.append(sum_value(table2))
@@ -46,11 +42,11 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 			still2 = still.copy()
 			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
 			if sum_value(table2) == sum_value(table):
-				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim)
+				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim,shine_mode=False)
 			else:
-				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim)
+				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim,shine_mode=False)
 			val.append(rs[1])
-		allr = np.asarray(allr)
+
 		val = np.asarray(val)
 		if not shine_mode:
 			if color>0:
@@ -58,6 +54,7 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 			else:
 				return [allr[np.random.choice(np.flatnonzero(val == min(val)))],min(val)]
 		shine = []
+		allr = np.asarray(allr)
 		if color>0:
 			allrmax = allr[np.flatnonzero(val == max(val))]
 			for m in allrmax:
@@ -81,8 +78,6 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 	
 def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
 	if len(node.children) == 0:
-		if (k>1):
-			print("LEVEL ",k)
 		allr = pieces.allrules_ek(table,last,still)
 		node.children = [Node(allr[i]) for i in range(len(allr))]
 	allr = node.children
@@ -104,7 +99,6 @@ def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
 			return [None,sum_value(table)]
 	if k==0:
 		for m in allr:
-			start = time.time()
 			still2 = still.copy()
 			move = m.name
 			table2 = pieces.move(table,move.split()[0],move.split()[1],still2,real=False)
@@ -132,7 +126,7 @@ def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
 
 
 class Keivchess:
-	def __init__(self,level,noha_lim,shine_mode,tree):
+	def __init__(self,level,noha_lim,shine_mode,tree=False):
 		self.level = level
 		self.noha_lim = noha_lim
 		self.shine_mode = shine_mode

@@ -210,7 +210,7 @@ def allrules_ek_shine(table,last,still):
 		table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
 		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
 			if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
-				shine += 1/points[6+np.abs(table[x1][y1])]
+				shine += control_strength[np.abs(table[x1][y1])]
 		else:
 			to = int((x2-x1)/np.abs(x2-x1))
 			still2 = still.copy()
@@ -220,7 +220,7 @@ def allrules_ek_shine(table,last,still):
 			still2 = still.copy()
 			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still2,real=False)
 			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
-				shine += 1/points[6+np.abs(table[x1][y1])]
+				shine += 10
 
 	return shine
 
@@ -432,6 +432,8 @@ def rules_king(x,y,table,still):
 		if table[x-1,y]==0 and table[x-2,y]==0:
 				pos.append(mv(x-2,y))
 	return pos
+
+control_strength = [0,4,2,3,2,-1,-1]
 images = ['black_king.png','black_queen.png','black_bishop.png','black_knight.png','black_rook.png','black_pawn.png',None,'white_pawn.png','white_rook.png','white_knight.png','white_bishop.png','white_queen.png','white_king.png']
 points = np.asarray([-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100])
 table_points = np.zeros((8,8))
