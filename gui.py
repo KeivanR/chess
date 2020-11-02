@@ -49,16 +49,38 @@ class Interface(Frame):
 		self.bkg = self.bkg.rotate(90*(dir+1))
 		w = 0
 		b = 0
+		w2 = 0
+		b2 = 0
+		piece = -5
 		for i in range(len(self.taken)):
-			piece = self.taken[i]
-			if piece<0:
-				mouse = tabletomouse(8,3.5-3.5*dir+b*dir,1)
-				b+=0.45
+			if self.taken[i]<0:
+				if piece==self.taken[i]:
+					b+=0.1
+					b2+=0.1
+				else:
+					b+=0.45
+					b2=0
+				mouse = tabletomouse(7.8+b2,4-4*dir+b*dir,1)
 			else:
-				mouse = tabletomouse(8,3.5+3.5*dir-w*dir,1)
-				w+=0.45
+				if piece==self.taken[i]:
+					w+=0.1
+					w2+=0.1
+				else:
+					w+=0.45
+					w2=0
+				mouse = tabletomouse(7.8+w2,4+4*dir-w*dir,1)
+			piece = self.taken[i]
 			load = Image.open(pieces.images[6+piece])
 			load = load.resize((30, 30))
+			self.bkg.paste(load,(mouse[0],mouse[1]),load)
+		if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
+			print("ECHEEEEEEEEEC")
+			color = 2*(self.cb.table[pieces.xy(self.last[1])[0],pieces.xy(self.last[1])[1]]>0)-1
+			[x,y] = np.where(self.cb.table==-6*color)
+			mouse = tabletomouse(int(x),int(y),self.chess_up)
+			load = Image.open("reds.png")
+			load = load.resize((35, 35))
+			load.putalpha(128)
 			self.bkg.paste(load,(mouse[0],mouse[1]),load)
 		if save:
 			self.hist.append(self.bkg)
@@ -146,9 +168,9 @@ class Interface(Frame):
 					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,self.a,self.b,self.still)
 					self.add_taken(s-np.sum(self.cb.table))
+					self.last = [self.a,self.b]		
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.update_idletasks()
-					self.last = [self.a,self.b]		
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
 						if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
@@ -169,8 +191,8 @@ class Interface(Frame):
 						s = np.sum(self.cb.table)
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 						self.add_taken(s-np.sum(self.cb.table))
-						self.display_pieces(self.cb.table,dir=self.chess_up)
 						self.last = cmove		
+						self.display_pieces(self.cb.table,dir=self.chess_up)
 						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 						if len(allrules)==0:
 							if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
@@ -198,7 +220,7 @@ class Interface(Frame):
 		self.still = [1,1]
 		self.taken = []
 		if option != 'Two players':
-			self.comp = ai.Keivchess(4,2,True)
+			self.comp = ai.Keivchess(2,2,True)
 		if option == 'Two computers':
 			self.comp = [ai.Keivchess(3,3,False),ai.Keivchess(3,2,True)]
 		if option == 'Play black':
@@ -239,8 +261,8 @@ class Interface(Frame):
 					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 					self.add_taken(s-np.sum(self.cb.table))
-					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.last = cmove
+					self.display_pieces(self.cb.table,dir=self.chess_up)
 					
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
