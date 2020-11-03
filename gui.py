@@ -224,6 +224,7 @@ class Interface(Frame):
 		self.last = None
 		self.still = [1,1]
 		self.taken = []
+		talking=0
 		if option != 'Two players':
 			self.comp = ai.Keivchess(4,2,True)
 		if option == 'Two computers':
@@ -264,24 +265,27 @@ class Interface(Frame):
 				bmove = [0]
 				allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)
 				attempt = 0
-				while attempt<4 and (len(bmove)!=2 or bmove[0]+' '+bmove[1] not in allrules):
-					blind.engine.say("Say a valid move")
-					blind.engine.runAndWait()
-					with blind.mic as source:
-						audio = blind.r.listen(source)
-					try:
-						bmove = blind.r.recognize_google(audio).lower().split(' to ')
-						if len(bmove)==1:
-							bmove = bmove.split()
-					except:
-						bmove=[0]
-						attempt -= 1
-					print(bmove)
-					attempt += 1
-				if attempt == 4:
-					blind.engine.say("I can't understand your accent, write down your move, you prick!")
-					blind.engine.runAndWait()
-					bmove = input("Move: ").split()
+				if talking:
+					while attempt<4 and (len(bmove)!=2 or bmove[0]+' '+bmove[1] not in allrules):
+						blind.engine.say("Say a valid move")
+						blind.engine.runAndWait()
+						with blind.mic as source:
+							audio = blind.r.listen(source)
+						try:
+							bmove = blind.r.recognize_google(audio).lower().split(' to ')
+							if len(bmove)==1:
+								bmove = bmove.split()
+						except:
+							bmove=[0]
+							attempt -= 1
+						print(bmove)
+						attempt += 1
+					if attempt==4:
+						blind.engine.say("I can't understand your accent, write down your move, you prick!")
+						blind.engine.runAndWait()
+				if not talking or attempt==4:
+					while(len(bmove)!=2 or bmove[0]+' '+bmove[1] not in allrules):
+						bmove = input("Move: ").split()
 				blind.engine.say("You chose "+ bmove[0]+' to '+bmove[1])
 				blind.engine.runAndWait()
 				s = np.sum(self.cb.table)
@@ -320,6 +324,7 @@ class Interface(Frame):
 				turn = 1-turn
 				blind.engine.say(cmove[0]+' to '+cmove[1])
 				blind.engine.runAndWait()
+				print(cmove[0]+' '+cmove[1])
 
 		if self.option == 'Two computers':
 			turn = 0

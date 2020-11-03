@@ -66,8 +66,6 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 					return [m,max(val)]
 				shine.append(pieces.allrules_ek_shine(table2,last,still2))
 			shine = np.asarray(shine)
-			if (k==3): 
-				[print([allrmax[i],shine[i]]) for i in range(len(allrmax))]
 			return [allrmax[np.random.choice(np.flatnonzero(shine == max(shine)))],max(val)]
 		else:
 			allrmin = allr[np.flatnonzero(val == min(val))]
@@ -78,8 +76,7 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 					return [m,min(val)]
 				shine.append(pieces.allrules_ek_shine(table2,last,still2))
 			shine = np.asarray(shine)
-			if (k==3): 
-				[print([allrmin[i],shine[i]]) for i in range(len(allrmin))]
+
 			return [allrmin[np.random.choice(np.flatnonzero(shine == max(shine)))],min(val)]
 	
 def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
