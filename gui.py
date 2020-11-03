@@ -4,6 +4,8 @@ import pieces
 import ai
 import time
 import numpy as np
+import blind
+import os
 
 class Interface(Frame):
 	def __init__(self, fenetre, **kwargs):
@@ -32,10 +34,14 @@ class Interface(Frame):
 		self.bouton_tc = Button(self, text="Two computers", fg="blue",command=lambda: self.start_game('Two computers'))
 		self.bouton_w = Button(self, text="Play white", fg="white",command=lambda: self.start_game('Play white'))
 		self.bouton_b = Button(self, text="Play black", fg="black",command=lambda: self.start_game('Play black'))
+		self.bouton_bw = Button(self, text="Blindfold white", fg="white",command=lambda: self.start_game('Blindfold white'))
+		self.bouton_bb = Button(self, text="Blindfold black", fg="black",command=lambda: self.start_game('Blindfold black'))
 		self.bouton_tp.grid(row=1, column=2,columnspan=1)
 		self.bouton_tc.grid(row=2, column=2,columnspan=1)
 		self.bouton_w.grid(row=3, column=2,columnspan=1)
 		self.bouton_b.grid(row=4, column=2,columnspan=1)
+		self.bouton_bw.grid(row=5, column=2,columnspan=1)
+		self.bouton_bb.grid(row=6, column=2,columnspan=1)
 
 	def display_pieces(self,table,dir=1,save=True):
 		self.bkg = Image.open("chessboard.jpg")
@@ -74,7 +80,6 @@ class Interface(Frame):
 			load = load.resize((30, 30))
 			self.bkg.paste(load,(mouse[0],mouse[1]),load)
 		if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
-			print("ECHEEEEEEEEEC")
 			color = 2*(self.cb.table[pieces.xy(self.last[1])[0],pieces.xy(self.last[1])[1]]>0)-1
 			[x,y] = np.where(self.cb.table==-6*color)
 			mouse = tabletomouse(int(x),int(y),self.chess_up)
@@ -220,10 +225,10 @@ class Interface(Frame):
 		self.still = [1,1]
 		self.taken = []
 		if option != 'Two players':
-			self.comp = ai.Keivchess(2,2,True)
+			self.comp = ai.Keivchess(4,2,True)
 		if option == 'Two computers':
 			self.comp = [ai.Keivchess(3,3,False),ai.Keivchess(3,2,True)]
-		if option == 'Play black':
+		if option == 'Play black' or option=='Blindfold black':
 			self.chess_up=-1
 		else:
 			self.chess_up=1
@@ -237,7 +242,7 @@ class Interface(Frame):
 		img.grid(row=0, column=0)
 		self.display_pieces(self.cb.table,dir=self.chess_up)
 		self.update_idletasks()
-		if option == 'Play black':
+		if option == 'Play black' or option=='Blindfold black':
 			cmove = self.comp.move(self.cb.table,self.last,self.still).split()
 			s = np.sum(self.cb.table)
 			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
@@ -250,6 +255,71 @@ class Interface(Frame):
 			img.image = render
 			img.grid(row=0, column=0)
 			self.update_idletasks()
+			if option=='Blindfold black':
+				blind.engine.say(cmove[0]+' to '+cmove[1])
+				blind.engine.runAndWait()
+		if 'Blindfold' in self.option:
+			turn = 0
+			while not self.checkmate:
+				bmove = [0]
+				allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)
+				attempt = 0
+				while attempt<4 and (len(bmove)!=2 or bmove[0]+' '+bmove[1] not in allrules):
+					blind.engine.say("Say a valid move")
+					blind.engine.runAndWait()
+					with blind.mic as source:
+						audio = blind.r.listen(source)
+					try:
+						bmove = blind.r.recognize_google(audio).lower().split(' to ')
+						if len(bmove)==1:
+							bmove = bmove.split()
+					except:
+						bmove=[0]
+						attempt -= 1
+					print(bmove)
+					attempt += 1
+				if attempt == 4:
+					blind.engine.say("I can't understand your accent, write down your move, you prick!")
+					blind.engine.runAndWait()
+					bmove = input("Move: ").split()
+				blind.engine.say("You chose "+ bmove[0]+' to '+bmove[1])
+				blind.engine.runAndWait()
+				s = np.sum(self.cb.table)
+				self.cb.table = pieces.move(self.cb.table,bmove[0],bmove[1],self.still)
+				self.add_taken(s-np.sum(self.cb.table))
+				self.last = bmove		
+				self.display_pieces(self.cb.table,dir=self.chess_up)
+				self.update_idletasks()
+				start = time.time()
+				cmove = self.comp.move(self.cb.table,self.last,self.still).split()
+				print(int(1000*(time.time()-start))/1000,'s')
+				s = np.sum(self.cb.table)
+				self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+				self.add_taken(s-np.sum(self.cb.table))
+				self.last = cmove
+				self.display_pieces(self.cb.table,dir=self.chess_up)
+				
+				allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
+				if len(allrules)==0:
+					if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
+						self.winfo_toplevel().title("Checkmate!")
+					else:
+						self.winfo_toplevel().title("Stalemate!")
+					self.checkmate = 1
+				if pieces.draw(self.cb.table):
+					print("DRAW")
+					break
+				if self.last is not None:
+					self.show_last()		
+				render = ImageTk.PhotoImage(self.bkg)
+				img = Label(self, image=render)
+				img.image = render
+				img.grid(row=0, column=0)
+				self.update_idletasks()
+				#time.sleep(0.25)
+				turn = 1-turn
+				blind.engine.say(cmove[0]+' to '+cmove[1])
+				blind.engine.runAndWait()
 
 		if self.option == 'Two computers':
 			turn = 0
