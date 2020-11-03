@@ -4,8 +4,7 @@ import pieces
 import ai
 import time
 import numpy as np
-import blind
-import os
+#import blind
 
 class Interface(Frame):
 	def __init__(self, fenetre, **kwargs):
@@ -20,6 +19,7 @@ class Interface(Frame):
 		self.still = [1,1]
 		self.checkmate = 0
 		self.hist = []
+		self.data_hist = []
 		self.hist_time = 0
 		self.taken = []
 
@@ -89,6 +89,7 @@ class Interface(Frame):
 			self.bkg.paste(load,(mouse[0],mouse[1]),load)
 		if save:
 			self.hist.append(self.bkg)
+			self.data_hist.append(self.cb.table)
 			self.hist_time = len(self.hist)-1
 		render = ImageTk.PhotoImage(self.bkg)
 		img = Label(self, image=render)
@@ -148,7 +149,7 @@ class Interface(Frame):
 		self.update_idletasks()
 
 	def callback(self,event):
-		if self.startGame and self.option != 'Two computers':
+		if self.startGame and self.option != 'Two computers' and not self.checkmate:
 			[x,y] = (mousetotable(event.x, event.y,self.chess_up))
 			if not pieces.oncb(x,y):
 				self.a = self.b = None
@@ -172,12 +173,14 @@ class Interface(Frame):
 				else:
 					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,self.a,self.b,self.still)
+					if ai.repet(self.cb.table,self.data_hist):
+						self.checkmate=1
 					self.add_taken(s-np.sum(self.cb.table))
 					self.last = [self.a,self.b]		
 					self.display_pieces(self.cb.table,dir=self.chess_up)
 					self.update_idletasks()
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
-					if len(allrules)==0:
+					if len(allrules)==0 or self.checkmate:
 						if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
 							self.winfo_toplevel().title("Checkmate!")
 						else:
@@ -191,10 +194,12 @@ class Interface(Frame):
 					elif not self.checkmate:
 						self.comp.update_tree(self.last[0]+' '+self.last[1])
 						start = time.time()
-						cmove = self.comp.move(self.cb.table,self.last,self.still).split()
+						cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
 						print(int(1000*(time.time()-start))/1000,'s')
 						s = np.sum(self.cb.table)
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+						if ai.repet(self.cb.table,self.data_hist):
+							self.checkmate=1
 						self.add_taken(s-np.sum(self.cb.table))
 						self.last = cmove		
 						self.display_pieces(self.cb.table,dir=self.chess_up)
@@ -217,6 +222,7 @@ class Interface(Frame):
 	def start_game(self,option):
 		self.winfo_toplevel().title("Keivchess")
 		self.hist = []
+		self.data_hist = []
 		self.hist_time = 0
 		self.checkmate = 0
 		self.option = option
@@ -226,9 +232,9 @@ class Interface(Frame):
 		self.taken = []
 		talking=0
 		if option != 'Two players':
-			self.comp = ai.Keivchess(4,2,True)
+			self.comp = ai.Keivchess(3,3,True)
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(3,3,False),ai.Keivchess(3,2,True)]
+			self.comp = [ai.Keivchess(4,2,True),ai.Keivchess(2,2,True)]
 		if option == 'Play black' or option=='Blindfold black':
 			self.chess_up=-1
 		else:
@@ -244,9 +250,11 @@ class Interface(Frame):
 		self.display_pieces(self.cb.table,dir=self.chess_up)
 		self.update_idletasks()
 		if option == 'Play black' or option=='Blindfold black':
-			cmove = self.comp.move(self.cb.table,self.last,self.still).split()
+			cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
 			s = np.sum(self.cb.table)
 			self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+			if ai.repet(self.cb.table,self.data_hist):
+				self.checkmate=1
 			self.add_taken(s-np.sum(self.cb.table))
 			self.display_pieces(self.cb.table,dir=self.chess_up)
 			self.last = cmove
@@ -257,8 +265,10 @@ class Interface(Frame):
 			img.grid(row=0, column=0)
 			self.update_idletasks()
 			if option=='Blindfold black':
-				blind.engine.say(cmove[0]+' to '+cmove[1])
-				blind.engine.runAndWait()
+				if talking:
+					blind.engine.say(cmove[0]+' to '+cmove[1])
+					blind.engine.runAndWait()
+				print(cmove[0]+' '+cmove[1])
 		if 'Blindfold' in self.option:
 			turn = 0
 			while not self.checkmate:
@@ -286,19 +296,24 @@ class Interface(Frame):
 				if not talking or attempt==4:
 					while(len(bmove)!=2 or bmove[0]+' '+bmove[1] not in allrules):
 						bmove = input("Move: ").split()
-				blind.engine.say("You chose "+ bmove[0]+' to '+bmove[1])
-				blind.engine.runAndWait()
+				if talking:
+					blind.engine.say("You chose "+ bmove[0]+' to '+bmove[1])
+					blind.engine.runAndWait()
 				s = np.sum(self.cb.table)
 				self.cb.table = pieces.move(self.cb.table,bmove[0],bmove[1],self.still)
+				if ai.repet(self.cb.table,self.data_hist):
+					self.checkmate=1
 				self.add_taken(s-np.sum(self.cb.table))
 				self.last = bmove		
 				self.display_pieces(self.cb.table,dir=self.chess_up)
 				self.update_idletasks()
 				start = time.time()
-				cmove = self.comp.move(self.cb.table,self.last,self.still).split()
+				cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
 				print(int(1000*(time.time()-start))/1000,'s')
 				s = np.sum(self.cb.table)
 				self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+				if ai.repet(self.cb.table,self.data_hist):
+					self.checkmate=1
 				self.add_taken(s-np.sum(self.cb.table))
 				self.last = cmove
 				self.display_pieces(self.cb.table,dir=self.chess_up)
@@ -322,8 +337,9 @@ class Interface(Frame):
 				self.update_idletasks()
 				#time.sleep(0.25)
 				turn = 1-turn
-				blind.engine.say(cmove[0]+' to '+cmove[1])
-				blind.engine.runAndWait()
+				if talking:
+					blind.engine.say(cmove[0]+' to '+cmove[1])
+					blind.engine.runAndWait()
 				print(cmove[0]+' '+cmove[1])
 
 		if self.option == 'Two computers':
@@ -331,10 +347,12 @@ class Interface(Frame):
 			while not self.checkmate:
 				try:
 					start = time.time()
-					cmove = self.comp[turn].move(self.cb.table,self.last,self.still).split()
+					cmove = self.comp[turn].move(self.cb.table,self.last,self.still,self.data_hist).split()
 					print(int(1000*(time.time()-start))/1000,'s')
 					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
+					if ai.repet(self.cb.table,self.data_hist):
+						self.checkmate=1
 					self.add_taken(s-np.sum(self.cb.table))
 					self.last = cmove
 					self.display_pieces(self.cb.table,dir=self.chess_up)

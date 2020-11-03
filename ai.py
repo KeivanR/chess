@@ -3,6 +3,14 @@ import pieces
 import random
 import time
 from anytree import Node,search
+def repet(a,l):
+	rep = 0
+	for b in l:
+		if (a==b).all():
+			rep +=1
+		if rep==3:
+			return 1
+	return 0
 def sum_value(table):
 	return np.sum(pieces.points[6+table])
 def sum_value2(table):
@@ -17,14 +25,14 @@ def sum_value2(table):
 					s+=pieces.points[6+table[i][j]]+pieces.table_points[i,j]*color
 	return s
 
-def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
+def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,shine_mode=False,check_repet=False):
 	allr = pieces.allrules_ek(table,last,still)
 	val = []
 	if len(allr)==0:
 		if pieces.exposed_king(table,last,still,no_move=True):
 			return [None,-100*color]
 		else:
-			return [None,sum_value(table)]
+			return [None,0]
 	if noha==noha_lim:
 		return [None,sum_value(table)]
 	if k==0:
@@ -41,11 +49,15 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 		for m in allr:
 			still2 = still.copy()
 			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
-			if sum_value(table2) == sum_value(table):
-				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha+1,noha_lim,shine_mode=False)
+			if check_repet and repet(table2,data_hist):
+				val.append(0)
+				print('yes')
 			else:
-				rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,-color,k-1,noha,noha_lim,shine_mode=False)
-			val.append(rs[1])
+				if sum_value(table2) == sum_value(table):
+					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha+1,noha_lim)
+				else:
+					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha,noha_lim)
+				val.append(rs[1])
 
 		val = np.asarray(val)
 		if not shine_mode:
@@ -71,7 +83,7 @@ def rec_sum(table,last,still,color,k,noha,noha_lim,shine_mode=True):
 			allrmin = allr[np.flatnonzero(val == min(val))]
 			for m in allrmin:
 				still2 = still.copy()
-				table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
+				table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)					
 				if pieces.iscastle(m,table):
 					return [m,min(val)]
 				shine.append(pieces.allrules_ek_shine(table2,last,still2))
@@ -142,7 +154,7 @@ class Keivchess:
 	def update_tree(self,move):
 		if self.tree:
 			self.node = search.findall_by_attr(self.node, move,maxlevel=2)[0]
-	def move(self,table,last,still):
+	def move(self,table,last,still,data_hist):
 		if self.level==-1:
 			allrules = pieces.allrules_ek(table,last,still)
 			return allrules[0]		
@@ -158,7 +170,7 @@ class Keivchess:
 				res = rec_sum_tree(table,self.node,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
 				self.update_tree(res[0])
 			else:
-				res = rec_sum(table,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim,shine_mode=self.shine_mode)
+				res = rec_sum(table,last,still,data_hist,color,self.level-1,noha=0,noha_lim=self.noha_lim,shine_mode=self.shine_mode,check_repet=True)
 
 			print('AI(',color,') assessment: ',res[1])
 			return res[0]
