@@ -44,9 +44,18 @@ def move(table,a,b,still,real=True):
 			table2[x2][y2] = 2*color
 		if b[2] == 'Q':
 			table2[x2][y2] = 5*color
+	#rook castling
+	if x1==0 and y1==0 and np.abs(table2[x1][y1])==2:
+		still[2] = 0
+	elif x1==7 and y1==0 and np.abs(table2[x1][y1])==2:
+		still[3] = 0
+	elif x1==0 and y1==7 and np.abs(table2[x1][y1])==2:
+		still[0] = 0
+	elif x1==7 and y1==7 and np.abs(table2[x1][y1])==2:
+		still[1] = 0
 	#castling
 	if np.abs(table2[x1][y1])==6:
-		still[table2[x1][y1]>0] = 0
+		still[2*(table2[x1][y1]>0):2*(table2[x1][y1]>0)+2] = [0,0]
 		if x2-x1==2:
 			table2[x1+1][y1]=table2[x1+3][y1]
 			table2[x1+3][y1]=0
@@ -431,10 +440,15 @@ def rules_king(x,y,table,still):
 		pos.append(mv(x+1,y))
 	if oncb(x+1,y+1) and table[x+1,y+1]*table[x,y]<=0:
 		pos.append(mv(x+1,y+1))
-	if still[0] and table[x,y]<0 or still[1] and table[x,y]>0:
-		if table[x+1,y]==0 and table[x+2,y]==0:
+	if table[x,y]<0:
+		if still[1] and table[x+1,y]==0 and table[x+2,y]==0:
 				pos.append(mv(x+2,y))
-		if table[x-1,y]==0 and table[x-2,y]==0 and table[x-3,y]==0:
+		if still[0] and table[x-1,y]==0 and table[x-2,y]==0 and table[x-3,y]==0:
+				pos.append(mv(x-2,y))
+	if table[x,y]>0:
+		if still[3] and table[x+1,y]==0 and table[x+2,y]==0:
+				pos.append(mv(x+2,y))
+		if still[2] and table[x-1,y]==0 and table[x-2,y]==0 and table[x-3,y]==0:
 				pos.append(mv(x-2,y))
 	return pos
 

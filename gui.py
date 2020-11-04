@@ -16,7 +16,7 @@ class Interface(Frame):
 		self.pack(fill=BOTH)
 		self.a = None
 		self.last = None
-		self.still = [1,1]
+		self.still = [1,1,1,1]
 		self.checkmate = 0
 		self.hist = []
 		self.data_hist = []
@@ -228,11 +228,11 @@ class Interface(Frame):
 		self.option = option
 		self.a = None
 		self.last = None
-		self.still = [1,1]
+		self.still = [1,1,1,1]
 		self.taken = []
 		talking=0
 		if option != 'Two players':
-			self.comp = ai.Keivchess(3,3,True)
+			self.comp = ai.Keivchess(2,2,True)
 		if option == 'Two computers':
 			self.comp = [ai.Keivchess(2,2,True),ai.Keivchess(2,2,True)]
 		if option == 'Play black' or option=='Blindfold black':
