@@ -3,12 +3,12 @@ import pieces
 import random
 import time
 from anytree import Node,search
-def repet(a,l):
+def repet(a,l,rep_lim=3):
 	rep = 0
 	for b in l:
 		if (a==b).all():
 			rep +=1
-		if rep==3:
+		if rep==rep_lim:
 			return 1
 	return 0
 def sum_value(table):
@@ -49,7 +49,7 @@ def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,shine_mode=False,ch
 		for m in allr:
 			still2 = still.copy()
 			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
-			if check_repet and repet(table2,data_hist):
+			if check_repet and repet(table2,data_hist,rep_lim=2):
 				val.append(0)
 				print('yes')
 			else:
