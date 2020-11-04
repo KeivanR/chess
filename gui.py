@@ -4,10 +4,10 @@ import pieces
 import ai
 import time
 import numpy as np
-#import blind
+import blind
 
 class Interface(Frame):
-	def __init__(self, fenetre, **kwargs):
+	def __init__(self, fenetre, c1, c2, **kwargs):
 		Frame.__init__(self, fenetre, width=1000, height=1200, **kwargs)
 		self.winfo_toplevel().title("Keivchess")
 		self.rowconfigure(0, weight=1)           
@@ -22,7 +22,8 @@ class Interface(Frame):
 		self.data_hist = []
 		self.hist_time = 0
 		self.taken = []
-
+		self.c1=c1
+		self.c2=c2
 		self.cb = pieces.Chessboard()
 		self.startGame = False
         # Création de nos widgets
@@ -31,11 +32,11 @@ class Interface(Frame):
 		self.bouton_quitter.grid(row=0, column=2)
         
 		self.bouton_tp = Button(self, text="Two players", fg="blue",command=lambda: self.start_game('Two players'))
-		self.bouton_tc = Button(self, text="Two computers", fg="blue",command=lambda: self.start_game('Two computers'))
-		self.bouton_w = Button(self, text="Play white", fg="white",command=lambda: self.start_game('Play white'))
-		self.bouton_b = Button(self, text="Play black", fg="black",command=lambda: self.start_game('Play black'))
-		self.bouton_bw = Button(self, text="Blindfold white", fg="white",command=lambda: self.start_game('Blindfold white'))
-		self.bouton_bb = Button(self, text="Blindfold black", fg="black",command=lambda: self.start_game('Blindfold black'))
+		self.bouton_tc = Button(self, text="Two computers("+str(c1)+'vs'+str(c2)+')', fg="blue",command=lambda: self.start_game('Two computers'))
+		self.bouton_w = Button(self, text="Play white("+str(c1)+")", fg="white",command=lambda: self.start_game('Play white'))
+		self.bouton_b = Button(self, text="Play black("+str(c1)+")", fg="black",command=lambda: self.start_game('Play black'))
+		self.bouton_bw = Button(self, text="Blindfold white("+str(c1)+")", fg="white",command=lambda: self.start_game('Blindfold white'))
+		self.bouton_bb = Button(self, text="Blindfold black("+str(c1)+")", fg="black",command=lambda: self.start_game('Blindfold black'))
 		self.bouton_tp.grid(row=1, column=2,columnspan=1)
 		self.bouton_tc.grid(row=2, column=2,columnspan=1)
 		self.bouton_w.grid(row=3, column=2,columnspan=1)
@@ -43,16 +44,16 @@ class Interface(Frame):
 		self.bouton_bw.grid(row=5, column=2,columnspan=1)
 		self.bouton_bb.grid(row=6, column=2,columnspan=1)
 
-	def display_pieces(self,table,dir=1,save=True):
+	def display_pieces(self,table,to=1,save=True):
 		self.bkg = Image.open("chessboard.jpg")
 		for i in range(8):
 			for j in range(8):
 				if table[j,i] != 0:
 					load = Image.open(pieces.images[6+table[j,i]])
-					load = load.rotate(90*(dir+1))
+					load = load.rotate(90*(to+1))
 					load = load.resize((40, 40))
 					self.bkg.paste(load,(46*(7-j)+32,46*i+32),load)	
-		self.bkg = self.bkg.rotate(90*(dir+1))
+		self.bkg = self.bkg.rotate(90*(to+1))
 		w = 0
 		b = 0
 		w2 = 0
@@ -66,7 +67,7 @@ class Interface(Frame):
 				else:
 					b+=0.45
 					b2=0
-				mouse = tabletomouse(7.8+b2,4-4*dir+b*dir,1)
+				mouse = tabletomouse(7.8+b2,4-4*to+b*to,1)
 			else:
 				if piece==self.taken[i]:
 					w+=0.1
@@ -74,7 +75,7 @@ class Interface(Frame):
 				else:
 					w+=0.45
 					w2=0
-				mouse = tabletomouse(7.8+w2,4+4*dir-w*dir,1)
+				mouse = tabletomouse(7.8+w2,4+4*to-w*to,1)
 			piece = self.taken[i]
 			load = Image.open(pieces.images[6+piece])
 			load = load.resize((30, 30))
@@ -168,7 +169,7 @@ class Interface(Frame):
 				if self.a+' '+self.b not in allrules:
 					self.a = movexy
 					self.b = None
-					self.display_pieces(self.cb.table,dir=self.chess_up,save=False)
+					self.display_pieces(self.cb.table,to=self.chess_up,save=False)
 					self.allowed_moves(allrules,movexy)
 				else:
 					s = np.sum(self.cb.table)
@@ -177,7 +178,7 @@ class Interface(Frame):
 						self.checkmate=1
 					self.add_taken(s-np.sum(self.cb.table))
 					self.last = [self.a,self.b]		
-					self.display_pieces(self.cb.table,dir=self.chess_up)
+					self.display_pieces(self.cb.table,to=self.chess_up)
 					self.update_idletasks()
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0 or self.checkmate:
@@ -190,7 +191,7 @@ class Interface(Frame):
 					if self.option == 'Two players':
 						time.sleep(1)
 						self.chess_up = -self.chess_up
-						self.display_pieces(self.cb.table,dir=self.chess_up)
+						self.display_pieces(self.cb.table,to=self.chess_up)
 					elif not self.checkmate:
 						self.comp.update_tree(self.last[0]+' '+self.last[1])
 						start = time.time()
@@ -202,7 +203,7 @@ class Interface(Frame):
 							self.checkmate=1
 						self.add_taken(s-np.sum(self.cb.table))
 						self.last = cmove		
-						self.display_pieces(self.cb.table,dir=self.chess_up)
+						self.display_pieces(self.cb.table,to=self.chess_up)
 						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 						if len(allrules)==0:
 							if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
@@ -230,11 +231,11 @@ class Interface(Frame):
 		self.last = None
 		self.still = [1,1,1,1]
 		self.taken = []
-		talking=0
+		talking=1
 		if option != 'Two players':
-			self.comp = ai.Keivchess(2,2,True)
+			self.comp = ai.Keivchess(self.c1[0],self.c1[1])
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(2,2,True),ai.Keivchess(2,2,True)]
+			self.comp = [ai.Keivchess(self.c1[0],self.c1[1]),ai.Keivchess(self.c2[0],self.c2[1])]
 		if option == 'Play black' or option=='Blindfold black':
 			self.chess_up=-1
 		else:
@@ -247,7 +248,7 @@ class Interface(Frame):
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
-		self.display_pieces(self.cb.table,dir=self.chess_up)
+		self.display_pieces(self.cb.table,to=self.chess_up)
 		self.update_idletasks()
 		if option == 'Play black' or option=='Blindfold black':
 			cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
@@ -256,7 +257,7 @@ class Interface(Frame):
 			if ai.repet(self.cb.table,self.data_hist):
 				self.checkmate=1
 			self.add_taken(s-np.sum(self.cb.table))
-			self.display_pieces(self.cb.table,dir=self.chess_up)
+			self.display_pieces(self.cb.table,to=self.chess_up)
 			self.last = cmove
 			self.show_last()
 			render = ImageTk.PhotoImage(self.bkg)
@@ -305,7 +306,7 @@ class Interface(Frame):
 					self.checkmate=1
 				self.add_taken(s-np.sum(self.cb.table))
 				self.last = bmove		
-				self.display_pieces(self.cb.table,dir=self.chess_up)
+				self.display_pieces(self.cb.table,to=self.chess_up)
 				self.update_idletasks()
 				start = time.time()
 				cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
@@ -316,14 +317,20 @@ class Interface(Frame):
 					self.checkmate=1
 				self.add_taken(s-np.sum(self.cb.table))
 				self.last = cmove
-				self.display_pieces(self.cb.table,dir=self.chess_up)
+				self.display_pieces(self.cb.table,to=self.chess_up)
 				
 				allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 				if len(allrules)==0:
 					if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
 						self.winfo_toplevel().title("Checkmate!")
+						if talking:
+							blind.engine.say('Checkmate')
+							blind.engine.runAndWait()
 					else:
 						self.winfo_toplevel().title("Stalemate!")
+						if talking:
+							blind.engine.say('Stalemate')
+							blind.engine.runAndWait()
 					self.checkmate = 1
 				if pieces.draw(self.cb.table):
 					print("DRAW")
@@ -355,7 +362,7 @@ class Interface(Frame):
 						self.checkmate=1
 					self.add_taken(s-np.sum(self.cb.table))
 					self.last = cmove
-					self.display_pieces(self.cb.table,dir=self.chess_up)
+					self.display_pieces(self.cb.table,to=self.chess_up)
 					
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0:
@@ -386,26 +393,28 @@ class Interface(Frame):
 window = Tk()
 #33,394
 
-def mousetotable(x,y,dir):
+def mousetotable(x,y,to):
 	c0 = 33
 	c1 = 394
-	if dir==-1:
+	if to==-1:
 		return [7-int((x-c0)/(c1-c0)*8),int((y-c0)/(c1-c0)*8)]
 	return [int((x-c0)/(c1-c0)*8),7-int((y-c0)/(c1-c0)*8)]
-def tabletomouse(x,y,dir):
+def tabletomouse(x,y,to):
 	c0 = 33
 	c1 = 394
 	mx1 = 8
 	my1 = 4
 	mx2 = 3
 	my2 = 8
-	if dir==-1:
+	if to==-1:
 		return [int((c1-c0)/8*(7-x)+c0+mx2),int((c1-c0)/8*y+c0+my2)]
 	return [int((c1-c0)/8*x+c0+mx1),int((c1-c0)/8*(7-y)+c0+my1)]
 
 
 window.geometry("600x500")
-interface = Interface(window)
+c1=[3,3]
+c2=[4,2]
+interface = Interface(window,c1,c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)
 window.bind('<Left>', interface.leftKey)

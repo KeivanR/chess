@@ -194,7 +194,6 @@ def allrules_ek(table,last,still):
 	for m in allr:
 		[x1,y1]=xy(m.split()[0])
 		[x2,y2]=xy(m.split()[1])
-		start = time.time()
 		still2 = still.copy()
 		table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
 		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
@@ -219,7 +218,6 @@ def allrules_ek_shine(table,last,still):
 	for m in allr:
 		[x1,y1]=xy(m.split()[0])
 		[x2,y2]=xy(m.split()[1])
-		start = time.time()
 		still2 = still.copy()
 		table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
 		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
@@ -241,46 +239,46 @@ def allrules_ek_shine(table,last,still):
 
 def rules_pawn(x,y,last,table):
 	pos = []
-	dir = 2*(table[x,y]>0)-1
-	if oncb(x,y+dir):
-		if table[x][y+dir]==0:
-			if y==3.5+2.5*dir:
-				pos.append(mv(x,y+dir)+'N')
-				pos.append(mv(x,y+dir)+'B')
-				pos.append(mv(x,y+dir)+'R')
-				pos.append(mv(x,y+dir)+'Q')
+	to = 2*(table[x,y]>0)-1
+	if oncb(x,y+to):
+		if table[x][y+to]==0:
+			if y==3.5+2.5*to:
+				pos.append(mv(x,y+to)+'N')
+				pos.append(mv(x,y+to)+'B')
+				pos.append(mv(x,y+to)+'R')
+				pos.append(mv(x,y+to)+'Q')
 			else:
-				pos.append(mv(x,y+dir))
-			if y==3.5-2.5*dir:
-				if table[x][y+2*dir]==0:
-					pos.append(mv(x,y+2*dir))	
-	if oncb(x+1,y+dir):	
-		if table[x+1][y+dir]*table[x,y]<0:
-			if y==3.5+2.5*dir:
-				pos.append(mv(x+1,y+dir)+'N')
-				pos.append(mv(x+1,y+dir)+'B')
-				pos.append(mv(x+1,y+dir)+'R')
-				pos.append(mv(x+1,y+dir)+'Q')
+				pos.append(mv(x,y+to))
+			if y==3.5-2.5*to:
+				if table[x][y+2*to]==0:
+					pos.append(mv(x,y+2*to))	
+	if oncb(x+1,y+to):	
+		if table[x+1][y+to]*table[x,y]<0:
+			if y==3.5+2.5*to:
+				pos.append(mv(x+1,y+to)+'N')
+				pos.append(mv(x+1,y+to)+'B')
+				pos.append(mv(x+1,y+to)+'R')
+				pos.append(mv(x+1,y+to)+'Q')
 			else:
-				pos.append(mv(x+1,y+dir))
-	if oncb(x-1,y+dir):
-		if table[x-1][y+dir]*table[x,y]<0:
-			if y==3.5+2.5*dir:
-				pos.append(mv(x-1,y+dir)+'N')
-				pos.append(mv(x-1,y+dir)+'B')
-				pos.append(mv(x-1,y+dir)+'R')
-				pos.append(mv(x-1,y+dir)+'Q')
+				pos.append(mv(x+1,y+to))
+	if oncb(x-1,y+to):
+		if table[x-1][y+to]*table[x,y]<0:
+			if y==3.5+2.5*to:
+				pos.append(mv(x-1,y+to)+'N')
+				pos.append(mv(x-1,y+to)+'B')
+				pos.append(mv(x-1,y+to)+'R')
+				pos.append(mv(x-1,y+to)+'Q')
 			else:
-				pos.append(mv(x-1,y+dir))
+				pos.append(mv(x-1,y+to))
 	if last is not None:
 		xy1 = xy(last[0])
 		xy2 = xy(last[1])
-		if y == 3.5+.5*dir and np.abs(table[xy2[0]][xy2[1]]) == 1:
-			if xy2[0]==xy1[0] and xy2[1]==y and xy1[1]==y+2*dir:
+		if y == 3.5+.5*to and np.abs(table[xy2[0]][xy2[1]]) == 1:
+			if xy2[0]==xy1[0] and xy2[1]==y and xy1[1]==y+2*to:
 				if xy2[0]==x-1:
-					pos.append(mv(x-1,y+dir))
+					pos.append(mv(x-1,y+to))
 				if xy2[0]==x+1:
-					pos.append(mv(x+1,y+dir))
+					pos.append(mv(x+1,y+to))
 	return pos
 
 	

@@ -25,7 +25,9 @@ def sum_value2(table):
 					s+=pieces.points[6+table[i][j]]+pieces.table_points[i,j]*color
 	return s
 
-def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,shine_mode=False,check_repet=False):
+def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,first_layer=False):
+	shine_mode = first_layer
+	check_repet = first_layer
 	allr = pieces.allrules_ek(table,last,still)
 	val = []
 	if len(allr)==0:
@@ -51,9 +53,8 @@ def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,shine_mode=False,ch
 			table2 = pieces.move(table,m.split()[0],m.split()[1],still2,real=False)
 			if check_repet and repet(table2,data_hist,rep_lim=2):
 				val.append(0)
-				print('yes')
 			else:
-				if sum_value(table2) == sum_value(table):
+				if first_layer or sum_value(table2) == sum_value(table):
 					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha+1,noha_lim)
 				else:
 					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha,noha_lim)
@@ -61,8 +62,6 @@ def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,shine_mode=False,ch
 
 		val = np.asarray(val)
 		if not shine_mode:
-			if k==3:
-				print('before move: ',pieces.allrules_ek_shine(table2,last,still2))
 			if color>0:
 				return [allr[np.random.choice(np.flatnonzero(val == max(val)))],max(val)]
 			else:
@@ -141,10 +140,9 @@ def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
 
 
 class Keivchess:
-	def __init__(self,level,noha_lim,shine_mode,tree=False):
+	def __init__(self,level,noha_lim,tree=False):
 		self.level = level
 		self.noha_lim = noha_lim
-		self.shine_mode = shine_mode
 		self.tree = tree
 		if tree:
 			cb = pieces.Chessboard()
@@ -170,7 +168,7 @@ class Keivchess:
 				res = rec_sum_tree(table,self.node,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
 				self.update_tree(res[0])
 			else:
-				res = rec_sum(table,last,still,data_hist,color,self.level-1,noha=0,noha_lim=self.noha_lim,shine_mode=self.shine_mode,check_repet=True)
+				res = rec_sum(table,last,still,data_hist,color,self.level-1,noha=0,noha_lim=self.noha_lim,first_layer=True)
 
 			print('AI(',color,') assessment: ',res[1])
 			return res[0]
