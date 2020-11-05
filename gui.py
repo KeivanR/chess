@@ -413,7 +413,7 @@ def tabletomouse(x,y,to):
 
 window.geometry("600x500")
 c1=[3,3]
-c2=[4,2]
+c2=[4,4]
 interface = Interface(window,c1,c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)

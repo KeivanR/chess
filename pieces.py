@@ -45,13 +45,13 @@ def move(table,a,b,still,real=True):
 		if b[2] == 'Q':
 			table2[x2][y2] = 5*color
 	#rook castling
-	if x1==0 and y1==0 and np.abs(table2[x1][y1])==2:
+	if x1==0 and y1==0 or x2==0 and y2==0:
 		still[2] = 0
-	elif x1==7 and y1==0 and np.abs(table2[x1][y1])==2:
+	elif x1==7 and y1==0 or x2==7 and y2==0:
 		still[3] = 0
-	elif x1==0 and y1==7 and np.abs(table2[x1][y1])==2:
+	elif x1==0 and y1==7 or x2==0 and y2==7:
 		still[0] = 0
-	elif x1==7 and y1==7 and np.abs(table2[x1][y1])==2:
+	elif x1==7 and y1==7 or x2==7 and y2==7:
 		still[1] = 0
 	#castling
 	if np.abs(table2[x1][y1])==6:
