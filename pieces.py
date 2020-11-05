@@ -191,26 +191,90 @@ def exposed_king(table,last,still,no_move=False):
 def allrules_ek(table,last,still):
 	rules = []
 	allr = allrules(table,last,still)
-	for m in allr:
-		[x1,y1]=xy(m.split()[0])
-		[x2,y2]=xy(m.split()[1])
-		still2 = still.copy()
-		table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
-		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
-			if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
-				rules.append(m)
-		else:
-			to = int((x2-x1)/np.abs(x2-x1))
-			still2 = still.copy()
-			table2 = move(table,mv(x1,y1),mv(x1,y1),still2,real=False)
-			still2 = still.copy()
-			table3 = move(table,mv(x1,y1),mv(x1+to,y1),still2,real=False)
-			still2 = still.copy()
-			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still2,real=False)
-			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
+	if exposed_king(table,last,still,no_move=True):
+		for m in allr:
+			append_rules_ek(m,rules,table,still)
+	else:
+		prot = king_protectors(table,last,still)
+		for m in allr:
+			if m.split()[0] in prot:
+				append_rules_ek(m,rules,table,still)
+			else:
 				rules.append(m)
 
 	return rules
+def append_rules_ek(m,rules,table,still):
+	[x1,y1]=xy(m.split()[0])
+	[x2,y2]=xy(m.split()[1])
+	still2 = still.copy()
+	table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
+	if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
+		if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
+			rules.append(m)
+	else:
+		to = int((x2-x1)/np.abs(x2-x1))
+		still2 = still.copy()
+		table2 = move(table,mv(x1,y1),mv(x1,y1),still2,real=False)
+		still2 = still.copy()
+		table3 = move(table,mv(x1,y1),mv(x1+to,y1),still2,real=False)
+		still2 = still.copy()
+		table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still2,real=False)
+		if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
+			rules.append(m)
+def king_protectors(table,last,still):
+	prot = []
+	if last is None:
+		color = 1
+	else:
+		color = 2*(table[xy(last[1])[0],xy(last[1])[1]]<0)-1
+
+	[x,y] = np.where(table==6*color)
+	[x,y] = [int(x),int(y)]
+
+	#rook/queen
+	k = 1
+	while(y+k<7 and table[x][y+k]==0):
+		k = k+1
+	if oncb(x,y+k) and table[x][y+k]*color>0:
+		prot.append(mv(x,y+k))
+	k = 1
+	while(y-k>0 and table[x][y-k]==0):
+		k = k+1
+	if oncb(x,y-k) and table[x][y-k]*color>0:
+		prot.append(mv(x,y-k))
+	k = 1
+	while(x+k<7 and table[x+k][y]==0):
+		k = k+1
+	if oncb(x+k,y) and table[x+k][y]*color>0:
+		prot.append(mv(x+k,y))
+	k = 1
+	while(x-k>0 and table[x-k][y]==0):
+		k = k+1
+	if oncb(x-k,y) and table[x-k][y]*color>0:
+		prot.append(mv(x-k,y))
+
+	#bishop/queen
+	k = 1
+	while(y+k<7 and x+k<7 and table[x+k][y+k]==0):
+		k = k+1
+	if oncb(x+k,y+k) and table[x+k][y+k]*color>0:
+		prot.append(mv(x+k,y+k))
+	k = 1
+	while(y-k>0 and x+k<7 and table[x+k][y-k]==0):
+		k = k+1
+	if oncb(x+k,y-k) and table[x+k][y-k]*color>0:
+		prot.append(mv(x+k,y-k))
+	k = 1
+	while(y+k<7 and x-k>0 and table[x-k][y+k]==0):
+		k = k+1
+	if oncb(x-k,y+k) and table[x-k][y+k]*color>0:
+		prot.append(mv(x-k,y+k))
+	k = 1
+	while(y-k>0 and x-k>0 and table[x-k][y-k]==0):
+		k = k+1
+	if oncb(x-k,y-k) and table[x-k][y-k]*color>0:
+		prot.append(mv(x-k,y-k))
+	return prot
 
 def allrules_ek_shine(table,last,still):
 	shine = 0
