@@ -30,6 +30,8 @@ def move(table,a,b,still,real=True):
 		return table2
 	[x1,y1]=xy(a)
 	[x2,y2]=xy(b[0:2])
+	if np.abs(table[x2][y2])==6:
+		print(a,'(',table[x1][y1],') ',b,'(',table[x2][y2],') is allowed but hitting king')
 	if np.abs(table2[x1][y1])==1 and x1!=x2 and table2[x2][y2]==0:
 		table2[x2][y1]=0
 	table2[x2][y2]=table2[x1][y1]
@@ -230,7 +232,8 @@ def king_protectors(table,last,still):
 
 	[x,y] = np.where(table==6*color)
 	[x,y] = [int(x),int(y)]
-
+	#add king first
+	prot.append(mv(x,y))
 	#rook/queen
 	k = 1
 	while(y+k<7 and table[x][y+k]==0):
