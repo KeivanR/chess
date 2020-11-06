@@ -30,8 +30,6 @@ def move(table,a,b,still,real=True):
 		return table2
 	[x1,y1]=xy(a)
 	[x2,y2]=xy(b[0:2])
-	if np.abs(table[x2][y2])==6:
-		print(a,'(',table[x1][y1],') ',b,'(',table[x2][y2],') is allowed but hitting king')
 	if np.abs(table2[x1][y1])==1 and x1!=x2 and table2[x2][y2]==0:
 		table2[x2][y1]=0
 	table2[x2][y2]=table2[x1][y1]
@@ -517,7 +515,7 @@ def rules_king(x,y,table,still):
 				pos.append(mv(x-2,y))
 	return pos
 
-control_strength = [0,2,2,3,2,-0.1,0.1]
+control_strength = [0,2,2,3,2,.2,0.1]
 images = ['black_king.png','black_queen.png','black_bishop.png','black_knight.png','black_rook.png','black_pawn.png',None,'white_pawn.png','white_rook.png','white_knight.png','white_bishop.png','white_queen.png','white_king.png']
 points = np.asarray([-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100])
 table_points = np.zeros((8,8))

@@ -233,9 +233,9 @@ class Interface(Frame):
 		self.taken = []
 		talking=1
 		if option != 'Two players':
-			self.comp = ai.Keivchess(self.c1[0],self.c1[1])
+			self.comp = ai.Keivchess(self.c1[0],self.c1[1],self.c1[2])
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(self.c1[0],self.c1[1]),ai.Keivchess(self.c2[0],self.c2[1])]
+			self.comp = [ai.Keivchess(self.c1[0],self.c1[1],self.c1[2]),ai.Keivchess(self.c2[0],self.c2[1],self.c2[2])]
 		if option == 'Play black' or option=='Blindfold black':
 			self.chess_up=-1
 		else:
@@ -411,9 +411,9 @@ def tabletomouse(x,y,to):
 	return [int((c1-c0)/8*x+c0+mx1),int((c1-c0)/8*(7-y)+c0+my1)]
 
 
-window.geometry("600x500")
-c1=[6,2]
-c2=[3,3]
+window.geometry("700x800")
+c1=[4,2,1]
+c2=[5,2,1]
 interface = Interface(window,c1,c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)

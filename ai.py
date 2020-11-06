@@ -25,10 +25,15 @@ def sum_value2(table):
 					s+=pieces.points[6+table[i][j]]+pieces.table_points[i,j]*color
 	return s
 
-def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,first_layer=False):
+def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,lax=1,first_layer=False):
 	shine_mode = first_layer
 	check_repet = first_layer
 	allr = pieces.allrules_ek(table,last,still)
+	if lax==0:
+		if len(allr)>30:
+			lax = 2
+		else:
+			lax=1
 	val = []
 	if len(allr)==0:
 		if pieces.exposed_king(table,last,still,no_move=True):
@@ -54,10 +59,10 @@ def rec_sum(table,last,still,data_hist,color,k,noha,noha_lim,first_layer=False):
 			if check_repet and repet(table2,data_hist,rep_lim=2):
 				val.append(0)
 			else:
-				if first_layer or sum_value(table2) == sum_value(table):
-					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha+1,noha_lim)
+				if first_layer and lax<2 or np.abs(sum_value(table2) - sum_value(table))<lax:
+					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha+1,noha_lim,lax)
 				else:
-					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha,noha_lim)
+					rs = rec_sum(table2,[m.split()[0],m.split()[1]],still2,None,-color,k-1,noha,noha_lim,lax)
 				val.append(rs[1])
 
 		val = np.asarray(val)
@@ -140,10 +145,11 @@ def rec_sum_tree(table,node,last,still,color,k,noha,noha_lim,create=False):
 
 
 class Keivchess:
-	def __init__(self,level,noha_lim,tree=False):
+	def __init__(self,level,noha_lim,lax,tree=False):
 		self.level = level
 		self.noha_lim = noha_lim
 		self.tree = tree
+		self.lax=lax
 		if tree:
 			cb = pieces.Chessboard()
 			cb.white_init()
@@ -168,7 +174,7 @@ class Keivchess:
 				res = rec_sum_tree(table,self.node,last,still,color,self.level-1,noha=0,noha_lim=self.noha_lim)
 				self.update_tree(res[0])
 			else:
-				res = rec_sum(table,last,still,data_hist,color,self.level-1,noha=0,noha_lim=self.noha_lim,first_layer=True)
+				res = rec_sum(table,last,still,data_hist,color,self.level-1,noha=0,noha_lim=self.noha_lim,lax=self.lax,first_layer=True)
 
 			print('AI(',color,') assessment: ',res[1])
 			return res[0]
