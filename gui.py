@@ -1,10 +1,12 @@
+#!/usr/bin/python2.7 
+# -*-coding:Latin-1 -*
 from tkinter import *
 from PIL import Image, ImageTk
 import pieces
 import ai
 import time
 import numpy as np
-import blind
+#import blind
 
 class Interface(Frame):
 	def __init__(self, fenetre, c1, c2, **kwargs):
@@ -56,26 +58,20 @@ class Interface(Frame):
 		self.bkg = self.bkg.rotate(90*(to+1))
 		w = 0
 		b = 0
-		w2 = 0
-		b2 = 0
 		piece = -5
 		for i in range(len(self.taken)):
 			if self.taken[i]<0:
 				if piece==self.taken[i]:
-					b+=0.1
-					b2+=0.1
+					b+=0.2
 				else:
 					b+=0.45
-					b2=0
-				mouse = tabletomouse(7.8+b2,4-4*to+b*to,1)
+				mouse = tabletomouse(-1+b,3.5-4.4*to,1)
 			else:
 				if piece==self.taken[i]:
-					w+=0.1
-					w2+=0.1
+					w+=0.2
 				else:
 					w+=0.45
-					w2=0
-				mouse = tabletomouse(7.8+w2,4+4*to-w*to,1)
+				mouse = tabletomouse(-1+w,3.5+4.4*to,1)
 			piece = self.taken[i]
 			load = Image.open(pieces.images[6+piece])
 			load = load.resize((30, 30))
@@ -130,6 +126,7 @@ class Interface(Frame):
 		if piece!=0:
 			self.taken.append(piece)
 			self.taken.sort()
+			self.taken = sorted(self.taken,key=abs)
 	def key(self,event):
 		print ("pressed", repr(event.char))
 	def leftKey(self,event):
@@ -139,7 +136,7 @@ class Interface(Frame):
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
-		self.update_idletasks()
+		self.update()
 	def rightKey(self,event):
 		self.hist_time += 1
 		self.hist_time = min(len(self.hist)-1,self.hist_time)
@@ -147,7 +144,7 @@ class Interface(Frame):
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0)
-		self.update_idletasks()
+		self.update()
 
 	def callback(self,event):
 		if self.startGame and self.option != 'Two computers' and not self.checkmate:
@@ -179,7 +176,7 @@ class Interface(Frame):
 					self.add_taken(s-np.sum(self.cb.table))
 					self.last = [self.a,self.b]		
 					self.display_pieces(self.cb.table,to=self.chess_up)
-					self.update_idletasks()
+					self.update()
 					allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
 					if len(allrules)==0 or self.checkmate:
 						if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
@@ -196,7 +193,7 @@ class Interface(Frame):
 						self.comp.update_tree(self.last[0]+' '+self.last[1])
 						start = time.time()
 						cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
-						print(int(1000*(time.time()-start))/1000,'s')
+						print(int(1000*float(time.time()-start))/1000,'s')
 						s = np.sum(self.cb.table)
 						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 						if ai.repet(self.cb.table,self.data_hist):
@@ -217,7 +214,7 @@ class Interface(Frame):
 			img = Label(self, image=render)
 			img.image = render
 			img.grid(row=0, column=0)
-			self.update_idletasks()
+			self.update()
 			
 
 	def start_game(self,option):
@@ -231,11 +228,11 @@ class Interface(Frame):
 		self.last = None
 		self.still = [1,1,1,1]
 		self.taken = []
-		talking=1
+		talking=0
 		if option != 'Two players':
-			self.comp = ai.Keivchess(self.c1[0],self.c1[1],self.c1[2])
+			self.comp = ai.Keivchess(self.c1[0],self.c1[1])
 		if option == 'Two computers':
-			self.comp = [ai.Keivchess(self.c1[0],self.c1[1],self.c1[2]),ai.Keivchess(self.c2[0],self.c2[1],self.c2[2])]
+			self.comp = [ai.Keivchess(self.c1[0],self.c1[1]),ai.Keivchess(self.c2[0],self.c2[1])]
 		if option == 'Play black' or option=='Blindfold black':
 			self.chess_up=-1
 		else:
@@ -249,7 +246,7 @@ class Interface(Frame):
 		img.image = render
 		img.grid(row=0, column=0)
 		self.display_pieces(self.cb.table,to=self.chess_up)
-		self.update_idletasks()
+		self.update()
 		if option == 'Play black' or option=='Blindfold black':
 			cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
 			s = np.sum(self.cb.table)
@@ -264,7 +261,7 @@ class Interface(Frame):
 			img = Label(self, image=render)
 			img.image = render
 			img.grid(row=0, column=0)
-			self.update_idletasks()
+			self.update()
 			if option=='Blindfold black':
 				if talking:
 					blind.engine.say(cmove[0]+' to '+cmove[1])
@@ -307,10 +304,10 @@ class Interface(Frame):
 				self.add_taken(s-np.sum(self.cb.table))
 				self.last = bmove		
 				self.display_pieces(self.cb.table,to=self.chess_up)
-				self.update_idletasks()
+				self.update()
 				start = time.time()
 				cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
-				print(int(1000*(time.time()-start))/1000,'s')
+				print(int(1000*float(time.time()-start))/1000,'s')
 				s = np.sum(self.cb.table)
 				self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 				if ai.repet(self.cb.table,self.data_hist):
@@ -341,7 +338,7 @@ class Interface(Frame):
 				img = Label(self, image=render)
 				img.image = render
 				img.grid(row=0, column=0)
-				self.update_idletasks()
+				self.update()
 				#time.sleep(0.25)
 				turn = 1-turn
 				if talking:
@@ -355,7 +352,7 @@ class Interface(Frame):
 				try:
 					start = time.time()
 					cmove = self.comp[turn].move(self.cb.table,self.last,self.still,self.data_hist).split()
-					print(int(1000*(time.time()-start))/1000,'s')
+					print(int(1000*float(time.time()-start))/1000,'s')
 					s = np.sum(self.cb.table)
 					self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
 					if ai.repet(self.cb.table,self.data_hist):
@@ -380,7 +377,7 @@ class Interface(Frame):
 					img = Label(self, image=render)
 					img.image = render
 					img.grid(row=0, column=0)
-					self.update_idletasks()
+					self.update()
 					#time.sleep(0.25)
 					turn = 1-turn
 				except KeyboardInterrupt:
@@ -394,14 +391,14 @@ window = Tk()
 #33,394
 
 def mousetotable(x,y,to):
-	c0 = 33
-	c1 = 394
+	c0 = float(33)
+	c1 = float(394)
 	if to==-1:
 		return [7-int((x-c0)/(c1-c0)*8),int((y-c0)/(c1-c0)*8)]
 	return [int((x-c0)/(c1-c0)*8),7-int((y-c0)/(c1-c0)*8)]
 def tabletomouse(x,y,to):
-	c0 = 33
-	c1 = 394
+	c0 = float(33)
+	c1 = float(394)
 	mx1 = 8
 	my1 = 4
 	mx2 = 3
@@ -412,8 +409,8 @@ def tabletomouse(x,y,to):
 
 
 window.geometry("700x800")
-c1=[4,2,1]
-c2=[5,2,1]
+c1=[4,2]
+c2=[5,2]
 interface = Interface(window,c1,c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)

@@ -1,5 +1,4 @@
 import numpy as np
-import copy
 import time
 def draw(table):
 	atable = np.abs(table)
@@ -206,18 +205,18 @@ def allrules_ek(table,last,still):
 def append_rules_ek(m,rules,table,still):
 	[x1,y1]=xy(m.split()[0])
 	[x2,y2]=xy(m.split()[1])
-	still2 = still.copy()
+	still2 = still[:]
 	table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
 	if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
 		if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
 			rules.append(m)
 	else:
 		to = int((x2-x1)/np.abs(x2-x1))
-		still2 = still.copy()
+		still2 = still[:]
 		table2 = move(table,mv(x1,y1),mv(x1,y1),still2,real=False)
-		still2 = still.copy()
+		still2 = still[:]
 		table3 = move(table,mv(x1,y1),mv(x1+to,y1),still2,real=False)
-		still2 = still.copy()
+		still2 = still[:]
 		table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still2,real=False)
 		if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
 			rules.append(m)
@@ -283,18 +282,18 @@ def allrules_ek_shine(table,last,still):
 	for m in allr:
 		[x1,y1]=xy(m.split()[0])
 		[x2,y2]=xy(m.split()[1])
-		still2 = still.copy()
+		still2 = still[:]
 		table2 = move(table,m.split()[0],m.split()[1],still2,real=False)
 		if np.abs(table[x1][y1])!=6 or np.abs(x1-x2)<2:
 			if not exposed_king(table2,[m.split()[0],m.split()[1]],still):
 				shine += control_strength[np.abs(table[x1][y1])]
 		else:
 			to = int((x2-x1)/np.abs(x2-x1))
-			still2 = still.copy()
+			still2 = still[:]
 			table2 = move(table,mv(x1,y1),mv(x1,y1),still2,real=False)
-			still2 = still.copy()
+			still2 = still[:]
 			table3 = move(table,mv(x1,y1),mv(x1+to,y1),still2,real=False)
-			still2 = still.copy()
+			still2 = still[:]
 			table4 = move(table,mv(x1,y1),mv(x1+2*to,y1),still2,real=False)
 			if not exposed_king(table2,[mv(x1,y1),mv(x1,y1)],still) and not exposed_king(table3,[mv(x1,y1),mv(x1+to,y1)],still) and not exposed_king(table4,[mv(x1,y1),mv(x1+2*to,y1)],still):
 				shine += 10
