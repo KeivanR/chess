@@ -72,7 +72,10 @@ predictor = dlib.shape_predictor('shape_68.dat')
 left = [36, 37, 38, 39, 40, 41]
 right = [42, 43, 44, 45, 46, 47]
 
-rat = 2000
+rat = 3000
+mal = 4
+lp0 = np.zeros((mal,2))
+rp0 = np.zeros((mal,2))
 
 cap = cv2.VideoCapture(0)
 ret, img = cap.read()
@@ -116,8 +119,15 @@ while(True):
             a4 = np.argmin(a[1])
             b2 = np.argmax(b[1])
             b4 = np.argmin(b[1])
-            lp = draw_eye( (a[1][a4], a[0][a4]),(a[1][a2], a[0][a2]), gray,img)
-            rp = draw_eye( (mid+b[1][b4], b[0][b4]), (mid+b[1][b2], b[0][b2]),gray,img)
+            lp1 = draw_eye( (a[1][a4], a[0][a4]),(a[1][a2], a[0][a2]), gray,img)
+            lp0[:-1] = lp0[1:]
+            lp0[-1] = lp1
+            lp = np.mean(lp0,0)
+            
+            rp1 = draw_eye( (mid+b[1][b4], b[0][b4]), (mid+b[1][b2], b[0][b2]),gray,img)
+            rp0[:-1] = rp0[1:]
+            rp0[-1] = rp1
+            rp = np.mean(rp0,0)
          #   cv2.line(img, (a[1][a2], a[0][a2]), (a[1][a4], a[0][a4]), (0, 255, 0), 1)
          #   cv2.line(img, (mid+b[1][b2], b[0][b2]), (mid+b[1][b4], b[0][b4]), (0, 255, 0), 1)
             cv2.circle(img, (int((lp[0]+rp[0])/2*rat+mid), int((lp[1]+rp[1])/2*rat+200)), 2, (0, 0, 0), 2)
