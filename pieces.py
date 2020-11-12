@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import constants
 def draw(table):
 	atable = np.abs(table)
 	return (not 1 in atable and not 2 in atable and not 4 in atable and not 5 in atable)
@@ -515,7 +516,21 @@ def rules_king(x,y,table,still):
 	return pos
 
 control_strength = [0,2,2,3,2,.2,0.1]
-images = ['black_king.png','black_queen.png','black_bishop.png','black_knight.png','black_rook.png','black_pawn.png',None,'white_pawn.png','white_rook.png','white_knight.png','white_bishop.png','white_queen.png','white_king.png']
+images = [
+constants.black_king_path[constants.os_name],
+constants.black_queen_path[constants.os_name],
+constants.black_bishop_path[constants.os_name],
+constants.black_knight_path[constants.os_name],
+constants.black_rook_path[constants.os_name],
+constants.black_pawn_path[constants.os_name],
+None,
+constants.white_pawn_path[constants.os_name],
+constants.white_rook_path[constants.os_name],
+constants.white_knight_path[constants.os_name],
+constants.white_bishop_path[constants.os_name],
+constants.white_queen_path[constants.os_name],
+constants.white_king_path[constants.os_name]
+]
 points = np.asarray([-100,-9,-3,-3,-5,-1,0,1,5,3,3,9,100])
 table_points = np.zeros((8,8))
 for i in range(8):

@@ -1,11 +1,10 @@
-#!/usr/bin/python2.7 
-# -*-coding:Latin-1 -*
+import numpy as np
 from tkinter import *
 from PIL import Image, ImageTk
 import pieces
 import ai
 import time
-import numpy as np
+import constants
 #import blind
 
 class Interface(Frame):
@@ -47,7 +46,7 @@ class Interface(Frame):
 		self.bouton_bb.grid(row=6, column=2,columnspan=1)
 
 	def display_pieces(self,table,to=1,save=True):
-		self.bkg = Image.open("chessboard.jpg")
+		self.bkg = Image.open(constants.chessboard_path[constants.os_name])
 		for i in range(8):
 			for j in range(8):
 				if table[j,i] != 0:
@@ -80,7 +79,7 @@ class Interface(Frame):
 			color = 2*(self.cb.table[pieces.xy(self.last[1])[0],pieces.xy(self.last[1])[1]]>0)-1
 			[x,y] = np.where(self.cb.table==-6*color)
 			mouse = tabletomouse(int(x),int(y),self.chess_up)
-			load = Image.open("reds.png")
+			load = Image.open(constants.reds_path[constants.os_name])
 			load = load.resize((35, 35))
 			load.putalpha(128)
 			self.bkg.paste(load,(mouse[0],mouse[1]),load)
@@ -98,7 +97,7 @@ class Interface(Frame):
 			if r.split()[0]==movexy:
 				xy2 = pieces.xy(r.split()[1])
 				mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
-				load = Image.open('yellows.png')
+				load = Image.open(constants.yellows_path[constants.os_name])
 				load = load.resize((35, 35))
 				load.putalpha(128)
 				self.bkg.paste(load,(mouse2[0],mouse2[1]),load)
@@ -109,7 +108,7 @@ class Interface(Frame):
 		mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
 		p1 = -5
 		p2 = 33
-		load = Image.open("reds.png")
+		load = Image.open(constants.reds_path[constants.os_name])
 		load = load.resize((42, 5))
 		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p2),load)
 		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p2),load)
@@ -240,7 +239,7 @@ class Interface(Frame):
 		self.cb = pieces.Chessboard()
 		self.cb.white_init()
 		self.cb.black_init()
-		self.bkg = Image.open("chessboard.jpg")
+		self.bkg = Image.open(constants.chessboard_path[constants.os_name])
 		render = ImageTk.PhotoImage(self.bkg)
 		img = Label(self, image=render)
 		img.image = render
@@ -409,8 +408,8 @@ def tabletomouse(x,y,to):
 
 
 window.geometry("700x800")
-c1=[4,2]
-c2=[5,2]
+c1=[6,2]
+c2=[7,2]
 interface = Interface(window,c1,c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)

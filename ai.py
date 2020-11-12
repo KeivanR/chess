@@ -2,7 +2,7 @@ import numpy as np
 import pieces
 import random
 import time
-from anytree import Node,search
+#from anytree import Node,search
 def repet(a,l,rep_lim=3):
 	rep = 0
 	for b in l:
