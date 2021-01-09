@@ -1,6 +1,8 @@
 os_name = 'windows'
 
 windows_path = 'C:/Users/keiva/OneDrive/Documents/GitHub/chess/'
+import os
+windows_path = os.path.dirname(os.path.abspath( __file__ ))+'/'
 
 chessboard_path = {'linux':'chessboard.jpg','windows':windows_path+'chessboard.jpg'}
 white_king_path = {'linux':'white_king.png','windows':windows_path+'white_king.png'}
