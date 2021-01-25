@@ -27,6 +27,7 @@ class Interface(Frame):
 		self.c2=c2
 		self.cb = pieces.Chessboard()
 		self.startGame = False
+		self.ranking=True
         # Création de nos widgets
         
 		self.bouton_quitter = Button(self, text="Quitter", command=self.quit)
@@ -34,16 +35,18 @@ class Interface(Frame):
         
 		self.bouton_tp = Button(self, text="Two players", fg="blue",command=lambda: self.start_game('Two players'))
 		self.bouton_tc = Button(self, text="Two computers("+str(c1)+'vs'+str(c2)+')', fg="blue",command=lambda: self.start_game('Two computers'))
-		self.bouton_w = Button(self, text="Play white("+str(c1)+")", fg="white",command=lambda: self.start_game('Play white'))
+		self.bouton_w = Button(self, text="Play white("+str(c1)+")", fg="black",command=lambda: self.start_game('Play white'))
 		self.bouton_b = Button(self, text="Play black("+str(c1)+")", fg="black",command=lambda: self.start_game('Play black'))
-		self.bouton_bw = Button(self, text="Blindfold white("+str(c1)+")", fg="white",command=lambda: self.start_game('Blindfold white'))
+		self.bouton_bw = Button(self, text="Blindfold white("+str(c1)+")", fg="black",command=lambda: self.start_game('Blindfold white'))
 		self.bouton_bb = Button(self, text="Blindfold black("+str(c1)+")", fg="black",command=lambda: self.start_game('Blindfold black'))
+		self.bouton_flip = Button(self, text="Flip board", fg="blue",command=lambda: self.flip())
 		self.bouton_tp.grid(row=1, column=2,columnspan=1)
 		self.bouton_tc.grid(row=2, column=2,columnspan=1)
 		self.bouton_w.grid(row=3, column=2,columnspan=1)
 		self.bouton_b.grid(row=4, column=2,columnspan=1)
 		self.bouton_bw.grid(row=5, column=2,columnspan=1)
 		self.bouton_bb.grid(row=6, column=2,columnspan=1)
+		self.bouton_flip.grid(row=7, column=2,columnspan=1)
 
 	def display_pieces(self,table,to=1,save=True):
 		self.bkg = Image.open(constants.chessboard_path[constants.os_name])
@@ -144,7 +147,17 @@ class Interface(Frame):
 		img.image = render
 		img.grid(row=0, column=0)
 		self.update()
-
+	def flip(self):
+		if self.startGame:
+			self.chess_up=-self.chess_up
+			self.display_pieces(self.cb.table,to=self.chess_up)
+			if self.last is not None:
+				self.show_last()
+			render = ImageTk.PhotoImage(self.bkg)
+			img = Label(self, image=render)
+			img.image = render
+			img.grid(row=0, column=0)
+			self.update()
 	def callback(self,event):
 		if self.startGame and self.option != 'Two computers' and not self.checkmate:
 			[x,y] = (mousetotable(event.x, event.y,self.chess_up))
@@ -408,8 +421,8 @@ def tabletomouse(x,y,to):
 
 
 window.geometry("700x800")
-c1=[4,2]
-c2=[3,2]
+c1=[3,3]
+c2=[3,3]
 interface = Interface(window,c1,c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)
