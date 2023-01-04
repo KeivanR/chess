@@ -5,7 +5,7 @@ import cv2
 
 
 class Group:
-    def __init__(self, width, height, list_x, list_y, list_values, list_theta, list_mag, r_max, size, speeds):
+    def __init__(self, width, height, list_x, list_y, list_values, list_theta, list_mag, r_max, size, speeds,noise_deg):
         self.width = width
         self.height = height
         self.N = len(list_x)
@@ -16,6 +16,7 @@ class Group:
         self.scale = 8
         self.size = size
         self.speeds = speeds
+        self.noise_deg = noise_deg
         k = 0
         for x, y, val, theta, mag in zip(list_x, list_y, list_values, list_theta, list_mag):
             self.things.append(Thing(x, y, val, theta, mag, size))
@@ -54,7 +55,7 @@ class Group:
             xref0 = self.things[rank[i]].x
             xref1 = self.things[rank[i + 1]].x
             around = (xref1 - xref0)**2+(yref1-yref0)**2 < self.r_max**2
-            touch = (xref1 - xref0)**2+(yref1-yref0)**2 < self.size**2
+            touch = (xref1 - xref0)**2+(yref1-yref0)**2 < self.size**2*4
             if around:
                 if touch and (self.things[rank[i]].value - self.things[rank[i + 1]].value) % 3 == 1:
                     self.things[rank[i]].value = self.things[rank[i + 1]].value
@@ -107,6 +108,7 @@ class Group:
 
     def update_pos(self):
         for i in range(self.N):
+            self.things[i].theta += (2*np.random.random()-1)*self.noise_deg*np.pi/180
             self.things[i].x += self.scale * self.speeds[int(self.things[i].mag-1)] * np.cos(self.things[i].theta)
             self.things[i].y += self.scale * self.speeds[int(self.things[i].mag-1)] * np.sin(self.things[i].theta)
             margin = 20
@@ -133,7 +135,7 @@ class Group:
                     if self.things[i].value == 0 and -self.things[i].size+0<b< -0+self.things[i].size:
                         self.grid_val[(int(self.things[i].x) - self.r_max + a)%self.width, (int(self.things[i].y) - self.r_max + b)%self.height] = 255
                     if self.things[i].value == 2 and (np.abs(b)-1<=np.abs(a)<=np.abs(b)+1 or a==0 and b<0 or b<1-self.things[i].size):
-                        self.grid_val[(int(self.things[i].x) - self.r_max + a)%self.width, (int(self.things[i].y - self.r_max + 1.6*b))%self.height] = 255
+                        self.grid_val[(int(self.things[i].x) - self.r_max + 1*a)%self.width, (int(self.things[i].y - self.r_max + 2*b))%self.height] = 255
 
 
     def display(self):
@@ -155,10 +157,11 @@ class Thing:
 
 width = 600
 height = 900
-N = 50
+N = 40
 r_max = 100
 size = 8
-speeds = [1,1,3]
+speeds = [1,1.5,2]
+noise_deg = 25
 
 list_x = np.random.random(N) * (width-size) + r_max + size
 list_y = np.random.random(N) * (height-size) + r_max + size
@@ -166,7 +169,7 @@ list_theta = np.random.random(N) * 3.1415
 list_mag = np.random.random(N) * 0.5
 list_values = (np.arange(N) / N * 3).astype(int)
 print(list_values)
-things = Group(width, height, list_x, list_y, list_values, list_theta, list_mag, r_max, size,speeds)
+things = Group(width, height, list_x, list_y, list_values, list_theta, list_mag, r_max, size,speeds,noise_deg)
 
 while 1:
     #things.display()
