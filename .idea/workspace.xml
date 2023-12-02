@@ -1,7 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="2a58de8d-c084-459c-bc43-54e1d95f3977" name="Changes" comment="" />
+    <list default="true" id="2a58de8d-c084-459c-bc43-54e1d95f3977" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ai.py" beforeDir="false" afterPath="$PROJECT_DIR$/ai.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/black_bishop.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/black_king.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/black_knight.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/black_pawn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/black_queen.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/black_rook.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chessboard.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/reds.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/white_bishop.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/white_king.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/white_knight.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/white_pawn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/white_queen.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/white_rook.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/yellows.png" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,6 +35,9 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
   <component name="ProjectId" id="2IxEhEnNgWH82eHmhhlqzLkmSy8" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -23,7 +48,8 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "full.screen.before.presentation.mode": "false",
-    "last_opened_file_path": "C:/Users/k.razban/Documents/GitHub/chess",
+    "git-widget-placeholder": "makeChessWorkAgain",
+    "last_opened_file_path": "/home/keivan/Documents/Python/chess",
     "settings.editor.selected.configurable": "preferences.lookFeel"
   }
 }]]></component>
