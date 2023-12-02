@@ -4,7 +4,7 @@ import random
 import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import BatchNormalization, Conv1D, Activation, Dropout, Flatten, Input, Dense, Concatenate,\
-LSTM, SimpleRNN, ConvLSTM2D, MultiHeadAttention
+LSTM, SimpleRNN, ConvLSTM2D
 
 
 def repet(a, l, rep_lim=3):
