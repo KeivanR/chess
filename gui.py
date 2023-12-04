@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import pieces
 import ai
 import time
-import constants
+from constants import *
 #import blind
 
 
@@ -19,7 +19,7 @@ class Interface(Frame):
 		self.a = None
 		self.last = None
 		self.still = [1, 1, 1, 1]
-		self.checkmate = 0
+		self.gameover = 0
 		self.hist = []
 		self.data_hist = []
 		self.hist_time = 0
@@ -48,8 +48,15 @@ class Interface(Frame):
 		self.bouton_bb.grid(row=6, column=2, columnspan=1)
 		self.bouton_flip.grid(row=7, column=2, columnspan=1)
 
+
+	def show_bkg(self, bkg):
+		render = ImageTk.PhotoImage(bkg)
+		img = Label(self, image=render)
+		img.image = render
+		img.grid(row=0, column=0)
+
 	def display_pieces(self, table, to=1, save=True):
-		self.bkg = Image.open(constants.chessboard_path[constants.os_name])
+		self.bkg = Image.open(chessboard_path[os_name])
 		for i in range(8):
 			for j in range(8):
 				if table[j, i] != 0:
@@ -82,26 +89,23 @@ class Interface(Frame):
 			color = 2*(self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] > 0)-1
 			[x, y] = np.where(self.cb.table == -6*color)
 			mouse = tabletomouse(int(x), int(y), self.chess_up)
-			load = Image.open(constants.reds_path[constants.os_name])
-			load = load.resize((35, 35))
+			load = Image.open(reds_path[os_name])
+			load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
 			load.putalpha(128)
 			self.bkg.paste(load, (mouse[0], mouse[1]), load)
 		if save:
 			self.hist.append(self.bkg)
 			self.data_hist.append(self.cb.table)
 			self.hist_time = len(self.hist)-1
-		render = ImageTk.PhotoImage(self.bkg)
-		img = Label(self, image=render)
-		img.image = render
-		img.grid(row=0, column=0)
+		self.show_bkg(self.bkg)
 
 	def allowed_moves(self, allrules, movexy):
 		for r in allrules:
 			if r.split()[0] == movexy:
 				xy2 = pieces.xy(r.split()[1])
 				mouse2 = tabletomouse(xy2[0], xy2[1], self.chess_up)
-				load = Image.open(constants.yellows_path[constants.os_name])
-				load = load.resize((35, 35))
+				load = Image.open(yellows_path[os_name])
+				load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
 				load.putalpha(128)
 				self.bkg.paste(load, (mouse2[0], mouse2[1]), load)
 
@@ -112,17 +116,17 @@ class Interface(Frame):
 		mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
 		p1 = -5
 		p2 = 33
-		load = Image.open(constants.reds_path[constants.os_name])
-		load = load.resize((42, 5))
+		load = Image.open(reds_path[os_name])
+		load = load.resize((SURROUND_SIZE, 5))
 		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p2),load)
 		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p2),load)
-		load = load.resize((42, 5))
+		load = load.resize((SURROUND_SIZE, 5))
 		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p1),load)
 		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p1),load)
-		load = load.resize((5, 42))
+		load = load.resize((5, SURROUND_SIZE))
 		self.bkg.paste(load,(mouse1[0]+p2,mouse1[1]+p1),load)
 		self.bkg.paste(load,(mouse2[0]+p2,mouse2[1]+p1),load)
-		load = load.resize((5, 42))
+		load = load.resize((5, SURROUND_SIZE))
 		self.bkg.paste(load,(mouse1[0]+p1,mouse1[1]+p1),load)
 		self.bkg.paste(load,(mouse2[0]+p1,mouse2[1]+p1),load)
 
@@ -132,25 +136,50 @@ class Interface(Frame):
 			self.taken.sort()
 			self.taken = sorted(self.taken,key=abs)
 
+	def move_process(self, a, b):
+		s = np.sum(self.cb.table)
+		# update chessboard (move piece)
+		self.cb.table = pieces.move(self.cb.table, a, b, self.still)
+		# stop game if repetitions exceed limit (stalemate)
+		if ai.repet(self.cb.table, self.data_hist):
+			self.gameover = 1
+		# update taken pieces by subtracting old/new chessboard sum
+		self.add_taken(s - np.sum(self.cb.table))
+		# update last move
+		self.last = [a, b]
+		# display new chessboard
+		self.display_pieces(self.cb.table, to=self.chess_up)
+		self.show_last()
+
+	def check_gameover(self, talking=False):
+		# check possible next moves. If none, stop game (checkmate or stalemate)
+		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
+		if len(allrules) == 0 or self.gameover:
+			# if in check (as well as no possible move), then checkmate
+			if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
+				end = 'checkmate'
+			# else stalemate
+			else:
+				end = 'stalemate'
+			self.winfo_toplevel().title(end)
+			if talking:
+				blind.engine.say(end)
+				blind.engine.runAndWait()
+			self.gameover = 1
+
 	def key(self, event):
 		print ("pressed", repr(event.char))
 
 	def leftKey(self, event):
 		self.hist_time -= 1
 		self.hist_time = max(0,self.hist_time)
-		render = ImageTk.PhotoImage(self.hist[self.hist_time])
-		img = Label(self, image=render)
-		img.image = render
-		img.grid(row=0, column=0)
+		self.show_bkg(self.hist[self.hist_time])
 		self.update()
 
 	def rightKey(self, event):
 		self.hist_time += 1
 		self.hist_time = min(len(self.hist)-1,self.hist_time)
-		render = ImageTk.PhotoImage(self.hist[self.hist_time])
-		img = Label(self, image=render)
-		img.image = render
-		img.grid(row=0, column=0)
+		self.show_bkg(self.hist[self.hist_time])
 		self.update()
 
 	def flip(self):
@@ -159,79 +188,58 @@ class Interface(Frame):
 			self.display_pieces(self.cb.table,to=self.chess_up)
 			if self.last is not None:
 				self.show_last()
-			render = ImageTk.PhotoImage(self.bkg)
-			img = Label(self, image=render)
-			img.image = render
-			img.grid(row=0, column=0)
+			self.show_bkg(self.bkg)
 			self.update()
 
 	def callback(self, event):
-		if self.startGame and self.option != 'Two computers' and not self.checkmate:
+		if self.startGame and self.option != 'Two computers' and not self.gameover:
 			[x,y] = (mousetotable(event.x, event.y, self.chess_up))
+			# click outside of chessboard
 			if not pieces.oncb(x,y):
 				self.a = self.b = None
 				return 0
 			movexy = pieces.mv(x,y)
 			allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
+			# if original square (a) not selected yet, set a, and display yellow allowed moves
 			if self.a is None:
 				self.a = movexy
 				self.allowed_moves(allrules,movexy)
+			# else, see where this second click lands and act accordingly
 			else:
+				# if the origin piece (a) is a pawn and the landing (b) coordinate is the edge (0 or 7), set promoted b
+				# else, set b
 				if np.abs(self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]])==1 and y==3.5+3.5*self.chess_up:
 					prom = input('Promotion:N,B,R,Q?')
 					self.b = movexy+prom
 				else:
 					self.b = movexy
+				# if (a b) is not an allowed move, unset b and set a as the newly clicked square
+				# and reset chessboard (to clear yellow squares) and redraw allowed moved squares
 				if self.a+' '+self.b not in allrules:
 					self.a = movexy
 					self.b = None
 					self.display_pieces(self.cb.table, to=self.chess_up, save=False)
 					self.allowed_moves(allrules,movexy)
 				else:
-					s = np.sum(self.cb.table)
-					self.cb.table = pieces.move(self.cb.table, self.a, self.b, self.still)
-					if ai.repet(self.cb.table, self.data_hist):
-						self.checkmate=1
-					self.add_taken(s-np.sum(self.cb.table))
-					self.last = [self.a, self.b]
-					self.display_pieces(self.cb.table, to=self.chess_up)
+					self.move_process(self.a, self.b)
+					self.check_gameover()
 					self.update()
-					allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-					if len(allrules)==0 or self.checkmate:
-						if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-							self.winfo_toplevel().title("Checkmate!")
-						else:
-							self.winfo_toplevel().title("Stalemate!")
-						self.checkmate = 1
-					
+
+					# if two player mode, flip chessboard
 					if self.option == 'Two players':
 						time.sleep(1)
 						self.chess_up = -self.chess_up
 						self.display_pieces(self.cb.table, to=self.chess_up)
-					elif not self.checkmate:
+					# else, AI plays
+					elif not self.gameover:
 						start = time.time()
+						# AI move
 						cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
 						print(int(1000*float(time.time()-start))/1000,'s')
-						s = np.sum(self.cb.table)
-						self.cb.table = pieces.move(self.cb.table,cmove[0],cmove[1],self.still)
-						if ai.repet(self.cb.table,self.data_hist):
-							self.checkmate=1
-						self.add_taken(s-np.sum(self.cb.table))
-						self.last = cmove		
-						self.display_pieces(self.cb.table,to=self.chess_up)
-						allrules = pieces.allrules_ek(self.cb.table,self.last,self.still)					
-						if len(allrules)==0:
-							if pieces.exposed_king(self.cb.table,self.last,self.still,no_move=True):
-								self.winfo_toplevel().title("Checkmate!")
-							else:
-								self.winfo_toplevel().title("Stalemate!")
-							self.checkmate = 1
-			if self.last is not None:
-				self.show_last()		
-			render = ImageTk.PhotoImage(self.bkg)
-			img = Label(self, image=render)
-			img.image = render
-			img.grid(row=0, column=0)
+						self.move_process(cmove[0], cmove[1])
+						self.check_gameover()
+
+			self.show_bkg(self.bkg)
 			self.update()
 			
 
@@ -240,7 +248,7 @@ class Interface(Frame):
 		self.hist = []
 		self.data_hist = []
 		self.hist_time = 0
-		self.checkmate = 0
+		self.gameover = 0
 		self.option = option
 		self.a = None
 		self.last = None
@@ -258,27 +266,14 @@ class Interface(Frame):
 		self.cb = pieces.Chessboard()
 		self.cb.white_init()
 		self.cb.black_init()
-		self.bkg = Image.open(constants.chessboard_path[constants.os_name])
-		render = ImageTk.PhotoImage(self.bkg)
-		img = Label(self, image=render)
-		img.image = render
-		img.grid(row=0, column=0)
+		self.bkg = Image.open(chessboard_path[os_name])
+		self.show_bkg(self.bkg)
 		self.display_pieces(self.cb.table,to=self.chess_up)
 		self.update()
 		if option == 'Play black' or option == 'Blindfold black':
 			cmove = self.comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
-			s = np.sum(self.cb.table)
-			self.cb.table = pieces.move(self.cb.table, cmove[0], cmove[1], self.still)
-			if ai.repet(self.cb.table, self.data_hist):
-				self.checkmate = 1
-			self.add_taken(s-np.sum(self.cb.table))
-			self.display_pieces(self.cb.table, to=self.chess_up)
-			self.last = cmove
-			self.show_last()
-			render = ImageTk.PhotoImage(self.bkg)
-			img = Label(self, image=render)
-			img.image = render
-			img.grid(row=0, column=0)
+			self.move_process(cmove[0], cmove[1])
+			self.show_bkg(self.bkg)
 			self.update()
 			if option == 'Blindfold black':
 				if talking:
@@ -287,7 +282,7 @@ class Interface(Frame):
 				print(cmove[0]+' '+cmove[1])
 		if 'Blindfold' in self.option:
 			turn = 0
-			while not self.checkmate:
+			while not self.gameover:
 				bmove = [0]
 				allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
 				attempt = 0
@@ -315,47 +310,20 @@ class Interface(Frame):
 				if talking:
 					blind.engine.say("You chose " + bmove[0] + ' to ' + bmove[1])
 					blind.engine.runAndWait()
-				s = np.sum(self.cb.table)
-				self.cb.table = pieces.move(self.cb.table, bmove[0], bmove[1], self.still)
-				if ai.repet(self.cb.table, self.data_hist):
-					self.checkmate = 1
-				self.add_taken(s-np.sum(self.cb.table))
-				self.last = bmove		
-				self.display_pieces(self.cb.table, to=self.chess_up)
+
+				self.move_process(bmove[0], bmove[1])
 				self.update()
 				start = time.time()
 				cmove = self.comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
 				print(int(1000*float(time.time()-start))/1000, 's')
-				s = np.sum(self.cb.table)
-				self.cb.table = pieces.move(self.cb.table, cmove[0], cmove[1], self.still)
-				if ai.repet(self.cb.table, self.data_hist):
-					self.checkmate = 1
-				self.add_taken(s-np.sum(self.cb.table))
-				self.last = cmove
-				self.display_pieces(self.cb.table, to=self.chess_up)
-				
-				allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-				if len(allrules) == 0:
-					if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-						self.winfo_toplevel().title("Checkmate!")
-						if talking:
-							blind.engine.say('Checkmate')
-							blind.engine.runAndWait()
-					else:
-						self.winfo_toplevel().title("Stalemate!")
-						if talking:
-							blind.engine.say('Stalemate')
-							blind.engine.runAndWait()
-					self.checkmate = 1
+				self.move_process(cmove[0],cmove[1])
+				self.check_gameover(talking=True)
 				if pieces.draw(self.cb.table):
 					print("DRAW")
 					break
 				if self.last is not None:
 					self.show_last()		
-				render = ImageTk.PhotoImage(self.bkg)
-				img = Label(self, image=render)
-				img.image = render
-				img.grid(row=0, column=0)
+				self.show_bkg(self.bkg)
 				self.update()
 				turn = 1-turn
 				if talking:
@@ -365,35 +333,19 @@ class Interface(Frame):
 
 		if self.option == 'Two computers':
 			turn = 0
-			while not self.checkmate:
+			while not self.gameover:
 				try:
 					start = time.time()
 					cmove = self.comp[turn].move(self.cb.table, self.last, self.still, self.data_hist).split()
 					print(int(1000*float(time.time()-start))/1000, 's')
-					s = np.sum(self.cb.table)
-					self.cb.table = pieces.move(self.cb.table, cmove[0], cmove[1], self.still)
-					if ai.repet(self.cb.table, self.data_hist):
-						self.checkmate = 1
-					self.add_taken(s-np.sum(self.cb.table))
-					self.last = cmove
-					self.display_pieces(self.cb.table, to=self.chess_up)
-					
-					allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-					if len(allrules) == 0:
-						if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-							self.winfo_toplevel().title("Checkmate!")
-						else:
-							self.winfo_toplevel().title("Stalemate!")
-						self.checkmate = 1
+					self.move_process(cmove[0],cmove[1])
+					self.check_gameover()
 					if pieces.draw(self.cb.table):
 						print("DRAW")
 						break
 					if self.last is not None:
 						self.show_last()		
-					render = ImageTk.PhotoImage(self.bkg)
-					img = Label(self, image=render)
-					img.image = render
-					img.grid(row=0, column=0)
+					self.show_bkg(self.bkg)
 					self.update()
 					turn = 1-turn
 				except KeyboardInterrupt:

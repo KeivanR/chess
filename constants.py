@@ -19,3 +19,8 @@ black_rook_path = {'linux':'images/black_rook.png','windows':windows_path+'image
 black_pawn_path = {'linux':'images/black_pawn.png','windows':windows_path+'images/black_pawn.png'}
 yellows_path = {'linux':'images/yellows.png','windows':windows_path+'images/yellows.png'}
 reds_path = {'linux':'images/reds.png','windows':windows_path+'images/reds.png'}
+
+SCALE = 1
+SURROUND_SIZE = 42
+SQUARE_SIZE = 35
+PIECE_SIZE = 30
