@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import pieces
 import random
 import tensorflow as tf
@@ -156,12 +157,13 @@ class Keivchess:
         self.y = []
 
     def move(self, table, last, still, data_hist):
+        start = time.time()
         if self.level == -1:
             allrules = pieces.allrules_ek(table, last, still)
-            return allrules[0]
+            move_played = allrules[0]
         elif self.level == 0:
             allrules = pieces.allrules_ek(table, last, still)
-            return random.choice(allrules)
+            move_played = random.choice(allrules)
         else:
             if last is None:
                 color = 1
@@ -175,4 +177,6 @@ class Keivchess:
             print('AI(', color, ') assessment: ', res[1])
             print('INPUT = ', table, last, still, data_hist)
             print('OUTPUT = ', res[0])
-            return res[0]
+            move_played = res[0]
+        print(int(1000 * float(time.time() - start)) / 1000, 's')
+        return move_played

@@ -48,6 +48,32 @@ class Interface(Frame):
 		self.bouton_bb.grid(row=6, column=2, columnspan=1)
 		self.bouton_flip.grid(row=7, column=2, columnspan=1)
 
+	def gui_initialisation(self, option):
+		self.winfo_toplevel().title("Keivchess")
+		self.hist = []
+		self.data_hist = []
+		self.hist_time = 0
+		self.gameover = 0
+		self.option = option
+		self.a = None
+		self.last = None
+		self.still = [1, 1, 1, 1]
+		self.taken = []
+		if option != 'Two players':
+			self.comp = ai.Keivchess(self.c1[0], self.c1[1])
+		if option == 'Two computers':
+			self.comp = [ai.Keivchess(self.c1[0], self.c1[1]), ai.Keivchess(self.c2[0], self.c2[1])]
+		if option == 'Play black' or option == 'Blindfold black':
+			self.chess_up = -1
+		else:
+			self.chess_up = 1
+		self.cb = pieces.Chessboard()
+		self.cb.white_init()
+		self.cb.black_init()
+		self.bkg = Image.open(chessboard_path[os_name])
+		self.show_bkg(self.bkg)
+		self.display_pieces(self.cb.table, to=self.chess_up)
+		self.update()
 
 	def show_bkg(self, bkg):
 		render = ImageTk.PhotoImage(bkg)
@@ -151,6 +177,85 @@ class Interface(Frame):
 		self.display_pieces(self.cb.table, to=self.chess_up)
 		self.show_last()
 
+	def user_move(self, event):
+		[x, y] = (mousetotable(event.x, event.y, self.chess_up))
+		# click outside of chessboard
+		if not pieces.oncb(x, y):
+			self.a = self.b = None
+			moved = False
+		movexy = pieces.mv(x, y)
+		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
+		# if original square (a) not selected yet, set a, and display yellow allowed moves
+		if self.a is None:
+			self.a = movexy
+			self.allowed_moves(allrules, movexy)
+			moved = False
+		# else, see where this second click lands and act accordingly
+		else:
+			# if the origin piece (a) is a pawn and the landing (b) coordinate is the edge (0 or 7), set promoted b
+			# else, set b
+			if np.abs(
+					self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]]) == 1 and y == 3.5 + 3.5 * self.chess_up:
+				prom = input('Promotion:N,B,R,Q?')
+				self.b = movexy + prom
+			else:
+				self.b = movexy
+			# if (a b) is not an allowed move, unset b and set a as the newly clicked square
+			# and reset chessboard (to clear yellow squares) and redraw allowed moved squares
+			if self.a + ' ' + self.b not in allrules:
+				self.a = movexy
+				self.b = None
+				self.display_pieces(self.cb.table, to=self.chess_up, save=False)
+				self.allowed_moves(allrules, movexy)
+				moved = False
+			else:
+				self.move_process(self.a, self.b)
+				self.check_gameover()
+				moved = True
+		self.check_gameover()
+		self.show_bkg(self.bkg)
+		self.update()
+		return moved
+
+	def ai_move(self, comp):
+		cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
+		self.move_process(cmove[0], cmove[1])
+		self.check_gameover()
+		self.show_bkg(self.bkg)
+		self.update()
+		return cmove
+
+	def blindfold_game(self):
+		turn = 0
+		while not self.gameover:
+			if talking:
+				bmove = self.get_voice_move()
+				blind.engine.say("You chose " + bmove[0] + ' to ' + bmove[1])
+				blind.engine.runAndWait()
+			else:
+				bmove = input("Move: ").split()
+			self.move_process(bmove[0], bmove[1])
+			self.update()
+
+			cmove = self.comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
+			if talking:
+				blind.engine.say(cmove[0] + ' to ' + cmove[1])
+				blind.engine.runAndWait()
+			print(cmove[0] + ' ' + cmove[1])
+			self.move_process(cmove[0], cmove[1])
+			if talking:
+				blind.engine.say(cmove[0] + ' to ' + cmove[1])
+				blind.engine.runAndWait()
+			print(cmove[0] + ' ' + cmove[1])
+			self.check_gameover(talking=True)
+
+			if pieces.draw(self.cb.table):
+				print("DRAW")
+				break
+			self.show_bkg(self.bkg)
+			self.update()
+			turn = 1 - turn
+
 	def check_gameover(self, talking=False):
 		# check possible next moves. If none, stop game (checkmate or stalemate)
 		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
@@ -191,155 +296,65 @@ class Interface(Frame):
 			self.show_bkg(self.bkg)
 			self.update()
 
+	def get_voice_move(self):
+		bmove = [0]
+		attempt = 0
+		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
+		while attempt < 4 and (len(bmove) != 2 or bmove[0] + ' ' + bmove[1] not in allrules):
+			blind.engine.say("Say a valid move")
+			blind.engine.runAndWait()
+			with blind.mic as source:
+				audio = blind.r.listen(source)
+			try:
+				bmove = blind.r.recognize_google(audio).lower().split(' to ')
+				if len(bmove) == 1:
+					bmove = bmove.split()
+			except:
+				bmove = [0]
+				attempt -= 1
+			print(bmove)
+			attempt += 1
+		if attempt == 4:
+			blind.engine.say("I can't understand your accent, write down your move, you prick!")
+			blind.engine.runAndWait()
+			while len(bmove) != 2 or bmove[0]+' '+bmove[1] not in allrules:
+				bmove = input("Move: ").split()
+		return bmove
+
 	def callback(self, event):
 		if self.startGame and self.option != 'Two computers' and not self.gameover:
-			[x,y] = (mousetotable(event.x, event.y, self.chess_up))
-			# click outside of chessboard
-			if not pieces.oncb(x,y):
-				self.a = self.b = None
-				return 0
-			movexy = pieces.mv(x,y)
-			allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-			# if original square (a) not selected yet, set a, and display yellow allowed moves
-			if self.a is None:
-				self.a = movexy
-				self.allowed_moves(allrules,movexy)
-			# else, see where this second click lands and act accordingly
-			else:
-				# if the origin piece (a) is a pawn and the landing (b) coordinate is the edge (0 or 7), set promoted b
-				# else, set b
-				if np.abs(self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]])==1 and y==3.5+3.5*self.chess_up:
-					prom = input('Promotion:N,B,R,Q?')
-					self.b = movexy+prom
-				else:
-					self.b = movexy
-				# if (a b) is not an allowed move, unset b and set a as the newly clicked square
-				# and reset chessboard (to clear yellow squares) and redraw allowed moved squares
-				if self.a+' '+self.b not in allrules:
-					self.a = movexy
-					self.b = None
-					self.display_pieces(self.cb.table, to=self.chess_up, save=False)
-					self.allowed_moves(allrules,movexy)
-				else:
-					self.move_process(self.a, self.b)
-					self.check_gameover()
+			moved = self.user_move(event)
+			if moved:
+				# if two player mode, flip chessboard
+				if self.option == 'Two players':
+					time.sleep(1)
+					self.chess_up = -self.chess_up
+					self.display_pieces(self.cb.table, to=self.chess_up)
+					self.show_bkg(self.bkg)
 					self.update()
-
-					# if two player mode, flip chessboard
-					if self.option == 'Two players':
-						time.sleep(1)
-						self.chess_up = -self.chess_up
-						self.display_pieces(self.cb.table, to=self.chess_up)
-					# else, AI plays
-					elif not self.gameover:
-						start = time.time()
-						# AI move
-						cmove = self.comp.move(self.cb.table,self.last,self.still,self.data_hist).split()
-						print(int(1000*float(time.time()-start))/1000,'s')
-						self.move_process(cmove[0], cmove[1])
-						self.check_gameover()
-
-			self.show_bkg(self.bkg)
-			self.update()
+				# else, AI plays
+				elif not self.gameover:
+					self.ai_move(self.comp)
 			
 
 	def start_game(self,option):
-		self.winfo_toplevel().title("Keivchess")
-		self.hist = []
-		self.data_hist = []
-		self.hist_time = 0
-		self.gameover = 0
-		self.option = option
-		self.a = None
-		self.last = None
-		self.still = [1, 1, 1, 1]
-		self.taken = []
+		self.gui_initialisation(option)
 		talking = 0
-		if option != 'Two players':
-			self.comp = ai.Keivchess(self.c1[0], self.c1[1])
-		if option == 'Two computers':
-			self.comp = [ai.Keivchess(self.c1[0],self.c1[1]),ai.Keivchess(self.c2[0],self.c2[1])]
-		if option == 'Play black' or option == 'Blindfold black':
-			self.chess_up = -1
-		else:
-			self.chess_up = 1
-		self.cb = pieces.Chessboard()
-		self.cb.white_init()
-		self.cb.black_init()
-		self.bkg = Image.open(chessboard_path[os_name])
-		self.show_bkg(self.bkg)
-		self.display_pieces(self.cb.table,to=self.chess_up)
-		self.update()
-		if option == 'Play black' or option == 'Blindfold black':
-			cmove = self.comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
-			self.move_process(cmove[0], cmove[1])
-			self.show_bkg(self.bkg)
-			self.update()
-			if option == 'Blindfold black':
+		if 'black' in option:
+			cmove = self.ai_move(self.comp)
+			if 'black' in option:
 				if talking:
 					blind.engine.say(cmove[0]+' to '+cmove[1])
 					blind.engine.runAndWait()
 				print(cmove[0]+' '+cmove[1])
-		if 'Blindfold' in self.option:
-			turn = 0
-			while not self.gameover:
-				bmove = [0]
-				allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-				attempt = 0
-				if talking:
-					while attempt < 4 and (len(bmove) != 2 or bmove[0]+' '+bmove[1] not in allrules):
-						blind.engine.say("Say a valid move")
-						blind.engine.runAndWait()
-						with blind.mic as source:
-							audio = blind.r.listen(source)
-						try:
-							bmove = blind.r.recognize_google(audio).lower().split(' to ')
-							if len(bmove) == 1:
-								bmove = bmove.split()
-						except:
-							bmove=[0]
-							attempt -= 1
-						print(bmove)
-						attempt += 1
-					if attempt == 4:
-						blind.engine.say("I can't understand your accent, write down your move, you prick!")
-						blind.engine.runAndWait()
-				if not talking or attempt == 4:
-					while len(bmove) != 2 or bmove[0]+' '+bmove[1] not in allrules:
-						bmove = input("Move: ").split()
-				if talking:
-					blind.engine.say("You chose " + bmove[0] + ' to ' + bmove[1])
-					blind.engine.runAndWait()
-
-				self.move_process(bmove[0], bmove[1])
-				self.update()
-				start = time.time()
-				cmove = self.comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
-				print(int(1000*float(time.time()-start))/1000, 's')
-				self.move_process(cmove[0],cmove[1])
-				self.check_gameover(talking=True)
-				if pieces.draw(self.cb.table):
-					print("DRAW")
-					break
-				if self.last is not None:
-					self.show_last()		
-				self.show_bkg(self.bkg)
-				self.update()
-				turn = 1-turn
-				if talking:
-					blind.engine.say(cmove[0]+' to '+cmove[1])
-					blind.engine.runAndWait()
-				print(cmove[0]+' '+cmove[1])
+		if 'Blindfold' in option:
+			self.blindfold_game()
 
 		if self.option == 'Two computers':
 			turn = 0
 			while not self.gameover:
 				try:
-					start = time.time()
-					cmove = self.comp[turn].move(self.cb.table, self.last, self.still, self.data_hist).split()
-					print(int(1000*float(time.time()-start))/1000, 's')
-					self.move_process(cmove[0],cmove[1])
-					self.check_gameover()
+					self.ai_move(self.comp[turn])
 					if pieces.draw(self.cb.table):
 						print("DRAW")
 						break
@@ -380,8 +395,8 @@ def tabletomouse(x,y,to):
 
 
 window.geometry("700x800")
-c1 = [3, 3]
-c2 = [3, 3]
+c2 = [3,3]#[3, 3]
+c1 = [2, 2]
 interface = Interface(window, c1, c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)
