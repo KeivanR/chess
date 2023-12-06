@@ -218,7 +218,7 @@ class Interface(Frame):
 				self.show_bkg(self.bkg)
 				self.update()
 				return True
-			
+
 	def ai_move(self, comp):
 		cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
 		self.move_process(cmove[0], cmove[1])
