@@ -250,15 +250,13 @@ class Interface(Frame):
 				blind.engine.runAndWait()
 			print(cmove[0] + ' ' + cmove[1])
 			self.check_gameover(talking=True)
-
-			if pieces.draw(self.cb.table):
-				print("DRAW")
-				break
 			self.show_bkg(self.bkg)
 			self.update()
 			turn = 1 - turn
 
 	def check_gameover(self, talking=False):
+		if pieces.draw(self.cb.table):
+			self.gameover = 1
 		# check possible next moves. If none, stop game (checkmate or stalemate)
 		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
 		if len(allrules) == 0 or self.gameover:
@@ -344,11 +342,10 @@ class Interface(Frame):
 		talking = 0
 		if 'black' in option:
 			cmove = self.ai_move(self.comp)
-			if 'black' in option:
-				if talking:
-					blind.engine.say(cmove[0]+' to '+cmove[1])
-					blind.engine.runAndWait()
-				print(cmove[0]+' '+cmove[1])
+			if talking:
+				blind.engine.say(cmove[0]+' to '+cmove[1])
+				blind.engine.runAndWait()
+			print(cmove[0]+' '+cmove[1])
 		if 'Blindfold' in option:
 			self.blindfold_game()
 
@@ -357,13 +354,6 @@ class Interface(Frame):
 			while not self.gameover:
 				try:
 					self.ai_move(self.comp[turn])
-					if pieces.draw(self.cb.table):
-						print("DRAW")
-						break
-					if self.last is not None:
-						self.show_last()		
-					self.show_bkg(self.bkg)
-					self.update()
 					turn = 1-turn
 				except KeyboardInterrupt:
 					break
@@ -397,8 +387,8 @@ def tabletomouse(x,y,to):
 
 
 window.geometry("700x800")
-c2 = [3,3]#[3, 3]
-c1 = [2, 2]
+c2 = [1,1]#[3, 3]
+c1 = [1, 1]
 interface = Interface(window, c1, c2)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)
