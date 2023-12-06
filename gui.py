@@ -182,14 +182,16 @@ class Interface(Frame):
 		# click outside of chessboard
 		if not pieces.oncb(x, y):
 			self.a = self.b = None
-			moved = False
+			return False
 		movexy = pieces.mv(x, y)
 		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
 		# if original square (a) not selected yet, set a, and display yellow allowed moves
 		if self.a is None:
 			self.a = movexy
 			self.allowed_moves(allrules, movexy)
-			moved = False
+			self.show_bkg(self.bkg)
+			self.update()
+			return False
 		# else, see where this second click lands and act accordingly
 		else:
 			# if the origin piece (a) is a pawn and the landing (b) coordinate is the edge (0 or 7), set promoted b
@@ -207,16 +209,16 @@ class Interface(Frame):
 				self.b = None
 				self.display_pieces(self.cb.table, to=self.chess_up, save=False)
 				self.allowed_moves(allrules, movexy)
-				moved = False
+				self.show_bkg(self.bkg)
+				self.update()
+				return False
 			else:
 				self.move_process(self.a, self.b)
 				self.check_gameover()
-				moved = True
-		self.check_gameover()
-		self.show_bkg(self.bkg)
-		self.update()
-		return moved
-
+				self.show_bkg(self.bkg)
+				self.update()
+				return True
+			
 	def ai_move(self, comp):
 		cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
 		self.move_process(cmove[0], cmove[1])
