@@ -1,6 +1,6 @@
 import numpy as np
 import time
-import constants
+from constants import *
 
 
 def draw(table):
@@ -554,19 +554,19 @@ def rules_king(x, y, table, still):
 
 control_strength = [0, 2, 2, 3, 2, .2, 0.1]
 images = [
-    constants.black_king_path[constants.os_name],
-    constants.black_queen_path[constants.os_name],
-    constants.black_bishop_path[constants.os_name],
-    constants.black_knight_path[constants.os_name],
-    constants.black_rook_path[constants.os_name],
-    constants.black_pawn_path[constants.os_name],
+    black_king_path[os_name],
+    black_queen_path[os_name],
+    black_bishop_path[os_name],
+    black_knight_path[os_name],
+    black_rook_path[os_name],
+    black_pawn_path[os_name],
     None,
-    constants.white_pawn_path[constants.os_name],
-    constants.white_rook_path[constants.os_name],
-    constants.white_knight_path[constants.os_name],
-    constants.white_bishop_path[constants.os_name],
-    constants.white_queen_path[constants.os_name],
-    constants.white_king_path[constants.os_name]
+    white_pawn_path[os_name],
+    white_rook_path[os_name],
+    white_knight_path[os_name],
+    white_bishop_path[os_name],
+    white_queen_path[os_name],
+    white_king_path[os_name]
 ]
 points = np.asarray([-100, -9, -3, -3, -5, -1, 0, 1, 5, 3, 3, 9, 100])
 table_points = np.zeros((8, 8))
