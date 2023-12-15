@@ -5,8 +5,8 @@ import pieces
 import ai
 import time
 from constants import *
+import sounds as sn
 #import blind
-
 
 class Interface(Frame):
 	def __init__(self, fenetre, c1, c2, **kwargs):
@@ -30,7 +30,7 @@ class Interface(Frame):
 		self.startGame = False
 		self.ranking=True
 
-		self.bouton_quitter = Button(self, text="Quitter", command=self.quit)
+		self.bouton_quitter = Button(self, text="Quitter", command=self.quit_and_sound)
 		self.bouton_quitter.grid(row=0, column=2)
         
 		self.bouton_tp = Button(self, text="Two players", fg="blue",command=lambda: self.start_game('Two players'))
@@ -47,6 +47,11 @@ class Interface(Frame):
 		self.bouton_bw.grid(row=5, column=2, columnspan=1)
 		self.bouton_bb.grid(row=6, column=2, columnspan=1)
 		self.bouton_flip.grid(row=7, column=2, columnspan=1)
+		sn.start()
+
+	def quit_and_sound(self):
+		sn.end()
+		self.quit()
 
 	def gui_initialisation(self, option):
 		self.winfo_toplevel().title("Keivchess")
@@ -158,6 +163,7 @@ class Interface(Frame):
 
 	def add_taken(self, piece):
 		if piece!=0:
+			sn.capture()
 			self.taken.append(piece)
 			self.taken.sort()
 			self.taken = sorted(self.taken,key=abs)
@@ -170,7 +176,10 @@ class Interface(Frame):
 		if ai.repet(self.cb.table, self.data_hist):
 			self.gameover = 1
 		# update taken pieces by subtracting old/new chessboard sum
-		self.add_taken(s - np.sum(self.cb.table))
+		if s != np.sum(self.cb.table):
+			self.add_taken(s - np.sum(self.cb.table))
+		else:
+			sn.move()
 		# update last move
 		self.last = [a, b]
 		# display new chessboard
@@ -256,15 +265,22 @@ class Interface(Frame):
 
 	def check_gameover(self, talking=False):
 		if pieces.draw(self.cb.table):
+			sn.draw()
 			self.gameover = 1
 		# check possible next moves. If none, stop game (checkmate or stalemate)
 		allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
 		if len(allrules) == 0 or self.gameover:
 			# if in check (as well as no possible move), then checkmate
 			if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
+				color = 2 * (self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] < 0) - 1
+				if self.chess_up*color>0:
+					sn.game_over()
+				else:
+					sn.victory()
 				end = 'checkmate'
 			# else stalemate
 			else:
+				sn.draw()
 				end = 'stalemate'
 			self.winfo_toplevel().title(end)
 			if talking:
