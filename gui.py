@@ -47,6 +47,7 @@ class Interface(Frame):
 		self.bouton_bw.grid(row=5, column=2, columnspan=1)
 		self.bouton_bb.grid(row=6, column=2, columnspan=1)
 		self.bouton_flip.grid(row=7, column=2, columnspan=1)
+		self.rowconfigure(tuple(range(8)),weight=1)
 		sn.start()
 
 	def quit_and_sound(self):
@@ -78,13 +79,14 @@ class Interface(Frame):
 		self.bkg = Image.open(chessboard_path[os_name])
 		self.show_bkg(self.bkg)
 		self.display_pieces(self.cb.table, to=self.chess_up)
+		self.show_bkg(self.bkg)
 		self.update()
 
 	def show_bkg(self, bkg):
 		render = ImageTk.PhotoImage(bkg)
 		img = Label(self, image=render)
 		img.image = render
-		img.grid(row=0, column=0)
+		img.grid(row=0, column=0, rowspan=8)
 
 	def display_pieces(self, table, to=1, save=True):
 		self.bkg = Image.open(chessboard_path[os_name])
@@ -128,7 +130,7 @@ class Interface(Frame):
 			self.hist.append(self.bkg)
 			self.data_hist.append(self.cb.table)
 			self.hist_time = len(self.hist)-1
-		self.show_bkg(self.bkg)
+		self.show_last()
 
 	def allowed_moves(self, allrules, movexy):
 		for r in allrules:
@@ -141,6 +143,8 @@ class Interface(Frame):
 				self.bkg.paste(load, (mouse2[0], mouse2[1]), load)
 
 	def show_last(self):
+		if self.last is None:
+			return
 		xy1 = pieces.xy(self.last[0])
 		xy2 = pieces.xy(self.last[1])
 		mouse1 = tabletomouse(xy1[0],xy1[1],self.chess_up)
@@ -184,7 +188,6 @@ class Interface(Frame):
 		self.last = [a, b]
 		# display new chessboard
 		self.display_pieces(self.cb.table, to=self.chess_up)
-		self.show_last()
 
 	def user_move(self, event):
 		[x, y] = (mousetotable(event.x, event.y, self.chess_up))
@@ -307,8 +310,6 @@ class Interface(Frame):
 		if self.startGame:
 			self.chess_up=-self.chess_up
 			self.display_pieces(self.cb.table,to=self.chess_up)
-			if self.last is not None:
-				self.show_last()
 			self.show_bkg(self.bkg)
 			self.update()
 
