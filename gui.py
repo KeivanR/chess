@@ -48,6 +48,7 @@ class Interface(Frame):
 		self.bouton_bb.grid(row=6, column=2, columnspan=1)
 		self.bouton_flip.grid(row=7, column=2, columnspan=1)
 		self.rowconfigure(tuple(range(8)),weight=1)
+		self._after_id = None
 		sn.start()
 
 	def quit_and_sound(self):
@@ -83,10 +84,29 @@ class Interface(Frame):
 		self.update()
 
 	def show_bkg(self, bkg):
+		x, y, w, h = self.grid_bbox(0,0)
+		new_size = w#min(h,w)
+		bkg = bkg.resize((new_size,new_size))
+		self.scale = new_size / 425
 		render = ImageTk.PhotoImage(bkg)
 		img = Label(self, image=render)
 		img.image = render
 		img.grid(row=0, column=0, rowspan=8)
+		self.rowconfigure(0,weight=1)
+		self.columnconfigure(0,weight=1)
+
+
+	def redraw(self, bkg):
+		x, y, w, h = self.grid_bbox(0,0)
+		new_size = w#min(h,w)
+		bkg = bkg.resize((new_size,new_size))
+		self.scale = new_size / 425
+		render = ImageTk.PhotoImage(bkg)
+		img = Label(self, image=render)
+		img.image = render
+		img.grid(row=0, column=0, rowspan=8)
+		self.rowconfigure(0,weight=1)
+		self.columnconfigure(0,weight=1)
 
 	def display_pieces(self, table, to=1, save=True):
 		self.bkg = Image.open(chessboard_path[os_name])
@@ -107,13 +127,13 @@ class Interface(Frame):
 					b += 0.2
 				else:
 					b += 0.45
-				mouse = tabletomouse(-1+b, 3.5-4.4*to, 1)
+				mouse = self.tabletomouse(-1+b, 3.5-4.4*to, 1)
 			else:
 				if piece == self.taken[i]:
 					w += 0.2
 				else:
 					w += 0.45
-				mouse = tabletomouse(-1+w, 3.5+4.4*to, 1)
+				mouse = self.tabletomouse(-1+w, 3.5+4.4*to, 1)
 			piece = self.taken[i]
 			load = Image.open(pieces.images[6+piece])
 			load = load.resize((30, 30))
@@ -121,7 +141,7 @@ class Interface(Frame):
 		if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
 			color = 2*(self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] > 0)-1
 			[x, y] = np.where(self.cb.table == -6*color)
-			mouse = tabletomouse(int(x), int(y), self.chess_up)
+			mouse = self.tabletomouse(int(x), int(y), self.chess_up)
 			load = Image.open(reds_path[os_name])
 			load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
 			load.putalpha(128)
@@ -136,7 +156,7 @@ class Interface(Frame):
 		for r in allrules:
 			if r.split()[0] == movexy:
 				xy2 = pieces.xy(r.split()[1])
-				mouse2 = tabletomouse(xy2[0], xy2[1], self.chess_up)
+				mouse2 = self.tabletomouse(xy2[0], xy2[1], self.chess_up)
 				load = Image.open(yellows_path[os_name])
 				load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
 				load.putalpha(128)
@@ -147,8 +167,8 @@ class Interface(Frame):
 			return
 		xy1 = pieces.xy(self.last[0])
 		xy2 = pieces.xy(self.last[1])
-		mouse1 = tabletomouse(xy1[0],xy1[1],self.chess_up)
-		mouse2 = tabletomouse(xy2[0],xy2[1],self.chess_up)
+		mouse1 = self.tabletomouse(xy1[0],xy1[1],self.chess_up)
+		mouse2 = self.tabletomouse(xy2[0],xy2[1],self.chess_up)
 		p1 = -5
 		p2 = 33
 		load = Image.open(reds_path[os_name])
@@ -190,7 +210,9 @@ class Interface(Frame):
 		self.display_pieces(self.cb.table, to=self.chess_up)
 
 	def user_move(self, event):
-		[x, y] = (mousetotable(event.x, event.y, self.chess_up))
+		print(event.x,event.y)
+		[x, y] = (self.mousetotable(event.x, event.y, self.chess_up))
+		print(x,y)
 		# click outside of chessboard
 		if not pieces.oncb(x, y):
 			self.a = self.b = None
@@ -313,6 +335,34 @@ class Interface(Frame):
 			self.show_bkg(self.bkg)
 			self.update()
 
+	def mousetotable(self, x, y, to):
+		x /= self.scale
+		y /= self.scale
+		c0 = float(33)
+		c1 = float(394)
+		if to == -1:
+			xnew = 7 - int((x - c0) / (c1 - c0) * 8)
+			ynew = int((y - c0) / (c1 - c0) * 8)
+		else:
+			xnew = int((x - c0) / (c1 - c0) * 8)
+			ynew = 7 - int((y - c0) / (c1 - c0) * 8)
+		return [xnew, ynew]
+
+	def tabletomouse(self, x, y, to):
+		c0 = float(33)
+		c1 = float(394)
+		mx1 = 8
+		my1 = 4
+		mx2 = 3
+		my2 = 8
+		if to == -1:
+			xnew = int((c1 - c0) / 8 * (7 - x) + c0 + mx2)
+			ynew = int((c1 - c0) / 8 * y + c0 + my2)
+		else:
+			xnew = int((c1 - c0) / 8 * x + c0 + mx1)
+			ynew = int((c1 - c0) / 8 * (7 - y) + c0 + my1)
+		return [int(xnew), int(ynew)]
+
 	def get_voice_move(self):
 		bmove = [0]
 		attempt = 0
@@ -352,6 +402,16 @@ class Interface(Frame):
 				# else, AI plays
 				elif not self.gameover:
 					self.ai_move(self.comp)
+
+	def on_window_resize(self, event):
+		if np.random.random()<0.01:
+			width = event.width
+			height = event.height
+			try:
+				self.show_bkg(self.bkg)
+			except:
+				pass
+
 			
 
 	def start_game(self,option):
@@ -383,30 +443,14 @@ window = Tk()
 #33,394
 
 
-def mousetotable(x,y,to):
-	c0 = float(33)
-	c1 = float(394)
-	if to==-1:
-		return [7-int((x-c0)/(c1-c0)*8),int((y-c0)/(c1-c0)*8)]
-	return [int((x-c0)/(c1-c0)*8),7-int((y-c0)/(c1-c0)*8)]
 
-
-def tabletomouse(x,y,to):
-	c0 = float(33)
-	c1 = float(394)
-	mx1 = 8
-	my1 = 4
-	mx2 = 3
-	my2 = 8
-	if to == -1:
-		return [int((c1-c0)/8*(7-x)+c0+mx2),int((c1-c0)/8*y+c0+my2)]
-	return [int((c1-c0)/8*x+c0+mx1),int((c1-c0)/8*(7-y)+c0+my1)]
 
 
 window.geometry("700x800")
 c2 = [3, 3]
 c1 = [3, 3]
 interface = Interface(window, c1, c2)
+window.bind("<Configure>", interface.on_window_resize)
 window.bind("<Button-1>", interface.callback)
 window.bind("<Key>", interface.key)
 window.bind('<Left>', interface.leftKey)
