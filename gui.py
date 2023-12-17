@@ -69,6 +69,7 @@ class Interface(Frame):
 
 
     def quit_and_sound(self):
+        self.gameover = 1
         sn.end()
         self.quit()
 
@@ -85,11 +86,14 @@ class Interface(Frame):
         self.still = [1, 1, 1, 1]
         self.taken = []
         self.c1 = [self.scale_white.get(), self.scale_white.get()]
-        self.c2= [self.scale_black.get(), self.scale_black.get()]
+        self.c2 = [self.scale_black.get(), self.scale_black.get()]
         if option != 'Two players':
-            self.comp = ai.Keivchess(self.c1[0], self.c1[1])
-        if option == 'Two computers':
-            self.comp = [ai.Keivchess(self.c1[0], self.c1[1]), ai.Keivchess(self.c2[0], self.c2[1])]
+            if 'black' in option:
+                self.comp = ai.Keivchess(self.c1[0], self.c1[1])
+            else:
+                self.comp = ai.Keivchess(self.c2[0], self.c2[1])
+            if option == 'Two computers':
+                self.comp = [ai.Keivchess(self.c1[0], self.c1[1]), ai.Keivchess(self.c2[0], self.c2[1])]
         if option == 'Play black' or option == 'Blindfold black':
             self.chess_up = -1
         else:
