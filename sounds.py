@@ -1,36 +1,57 @@
 from playsound import playsound
 from threading import Thread
 
-def move():
-    x = Thread(target=playsound, args=('audio/move.mp3',))
-    x.start()
+def move(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/move.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
 
 
-def capture():
-    x = Thread(target=playsound, args=('audio/capture.mp3',))
-    x.start()
+def capture(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/capture.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
 
 
-def start():
-    x = Thread(target=playsound, args=('audio/start.mp3',))
-    x.start()
+def start(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/start.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
 
 
-def end():
-    x = Thread(target=playsound, args=('audio/end.mp3',))
-    x.start()
+def end(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/end.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
 
 
-def victory():
-    x = Thread(target=playsound, args=('audio/victory.mp3',))
-    x.start()
+def victory(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/victory.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
 
 
-def game_over():
-    x = Thread(target=playsound, args=('audio/game_over.mp3',))
-    x.start()
+def game_over(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/game_over.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
 
 
-def draw():
-    x = Thread(target=playsound, args=('audio/draw.mp3',))
-    x.start()
+def draw(thread=True):
+    if thread:
+        x = Thread(target=playsound, args=('audio/draw.mp3',))
+        x.start()
+    else:
+        playsound('audio/end.mp3')
