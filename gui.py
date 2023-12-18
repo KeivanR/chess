@@ -70,7 +70,7 @@ class Interface(Frame):
 
     def quit_and_sound(self):
         self.gameover = 1
-        sn.end()
+        sn.end(thread=False)
         self.quit()
 
 
@@ -240,9 +240,7 @@ class Interface(Frame):
 
 
     def user_move(self, event):
-        print(event.x, event.y)
         [x, y] = (self.mousetotable(event.x, event.y, self.chess_up))
-        print(x, y)
         # click outside of chessboard
         if not pieces.oncb(x, y):
             self.a = self.b = None
@@ -388,8 +386,8 @@ class Interface(Frame):
 
 
     def tabletomouse(self, x, y, to):
-        c0 = float(33)
-        c1 = float(394)
+        c0 = 33
+        c1 = 394
         mx1 = 8
         my1 = 4
         mx2 = 3
