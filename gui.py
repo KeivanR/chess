@@ -16,8 +16,6 @@ class Interface(Frame):
     def __init__(self, fenetre, **kwargs):
         Frame.__init__(self, fenetre, width=1000, height=1200, **kwargs)
         self.winfo_toplevel().title("Keivchess")
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
         self.comp = None
         self.pack(fill=BOTH)
         self.a = None
@@ -31,9 +29,11 @@ class Interface(Frame):
         self.cb = pieces.Chessboard()
         self.startGame = False
         self.ranking = True
+        self.scale = 1
+
+        self.img = Label(self)
 
         self.bouton_quitter = Button(self, text="Quitter", command=self.quit_and_sound)
-        self.bouton_quitter.grid(row=0, column=2)
 
         self.bouton_tp = Button(self, text="Two players", fg="blue", command=lambda: self.start_game('Two players'))
         self.bouton_tc = Button(self, text="Two computers", fg="blue",
@@ -47,26 +47,27 @@ class Interface(Frame):
         self.bouton_bb = Button(self, text="Blindfold black", fg="black",
                                 command=lambda: self.start_game('Blindfold black'))
         self.bouton_flip = Button(self, text="Flip board", fg="blue", command=lambda: self.flip())
-        self.scale_black = Scale(self, fg="black", from_=4, to=0, label='Black')
+        self.scale_black = Scale(self, fg="black", from_=4, to=0, label='Black', length=200)
         self.scale_black.set(3)
-        self.scale_white = Scale(self, fg="black", from_=4, to=0, label='White')
+        self.scale_white = Scale(self, fg="black", from_=4, to=0, label='White', length=200)
         self.scale_white.set(3)
-        self.bouton_levels = Button(self, text="Validate levels", fg="black", command=lambda: self.set_levels())
 
-
-        self.bouton_tp.grid(row=1, column=2, columnspan=1)
-
-        self.bouton_tc.grid(row=2, column=2, columnspan=1)
-        self.bouton_w.grid(row=3, column=2, columnspan=1)
-        self.bouton_b.grid(row=4, column=2, columnspan=1)
-        self.bouton_bw.grid(row=5, column=2, columnspan=1)
-        self.bouton_bb.grid(row=6, column=2, columnspan=1)
-        self.bouton_flip.grid(row=7, column=2, columnspan=1)
-        self.scale_black.grid(row=1, column=3, rowspan=6,sticky='ns')
-        self.scale_white.grid(row=1, column=4, rowspan=6,sticky='sn')
-        self.rowconfigure(tuple(range(8)), weight=1)
+        self.img = Label(self, image='')
+        self.place_buttons()
         sn.start()
 
+    def place_buttons(self):
+        self.bouton_quitter.place(relx=.6, rely=0)
+        self.bouton_tp.place(relx=.6, rely=.1)
+        self.bouton_tc.place(relx=.6, rely=.2)
+        self.bouton_w.place(relx=.6, rely=.3)
+        self.bouton_b.place(relx=.6, rely=.4)
+        self.bouton_bw.place(relx=.6, rely=.5)
+        self.bouton_bb.place(relx=.6, rely=.6)
+        self.bouton_flip.place(relx=.6, rely=.7)
+        self.scale_black.place(relx=.9, rely=.1, relheight=.8)
+        self.scale_white.place(relx=.8, rely=.1, relheight=.8)
+        self.img.place(relx=0, rely=0)
 
     def quit_and_sound(self):
         self.gameover = 1
@@ -109,17 +110,13 @@ class Interface(Frame):
 
 
     def show_bkg(self, bkg):
-        x, y, w, h = self.grid_bbox(0, 0)
-        new_size = w  # min(h,w)
-        bkg = bkg.resize((new_size, new_size))
+        new_size = min(int(self.winfo_width()*.6), self.winfo_height())
         self.scale = new_size / 425
+        bkg = bkg.resize((new_size, new_size))
         render = ImageTk.PhotoImage(bkg)
-        img = Label(self, image=render)
-        img.configure(image=render)
-        img.image = render
-        img.grid(row=0, column=0, rowspan=8)
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
+        self.img.configure(image=render)
+        self.img.image = render
+
 
 
     def display_pieces(self, table, to=1, save=True):
@@ -372,6 +369,7 @@ class Interface(Frame):
 
 
     def mousetotable(self, x, y, to):
+        print(x,y)
         x /= self.scale
         y /= self.scale
         c0 = float(33)
@@ -382,6 +380,7 @@ class Interface(Frame):
         else:
             xnew = int((x - c0) / (c1 - c0) * 8)
             ynew = 7 - int((y - c0) / (c1 - c0) * 8)
+        print(xnew,ynew)
         return [xnew, ynew]
 
 
@@ -444,7 +443,7 @@ class Interface(Frame):
 
 
     def on_window_resize(self, event):
-        if np.random.random() < 0.01:
+        if np.random.random() < 0.1:
             width = event.width
             height = event.height
             try:
