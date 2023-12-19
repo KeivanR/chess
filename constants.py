@@ -23,4 +23,4 @@ reds_path = {'linux':'images/reds.png','windows':windows_path+'images/reds.png'}
 SCALE = 1
 SURROUND_SIZE = 42
 SQUARE_SIZE = 35
-PIECE_SIZE = 30
+PIECE_SIZE = 40

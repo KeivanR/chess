@@ -30,6 +30,7 @@ class Interface(Frame):
         self.startGame = False
         self.ranking = True
         self.scale = 1
+        self.wait_prom = False
 
         self.img = Label(self)
 
@@ -57,14 +58,14 @@ class Interface(Frame):
         sn.start()
 
     def place_buttons(self):
-        self.bouton_quitter.place(relx=.6, rely=0)
-        self.bouton_tp.place(relx=.6, rely=.1)
-        self.bouton_tc.place(relx=.6, rely=.2)
-        self.bouton_w.place(relx=.6, rely=.3)
-        self.bouton_b.place(relx=.6, rely=.4)
-        self.bouton_bw.place(relx=.6, rely=.5)
-        self.bouton_bb.place(relx=.6, rely=.6)
-        self.bouton_flip.place(relx=.6, rely=.7)
+        self.bouton_quitter.place(relx=.65, rely=0)
+        self.bouton_tp.place(relx=.65, rely=.1)
+        self.bouton_tc.place(relx=.65, rely=.2)
+        self.bouton_w.place(relx=.65, rely=.3)
+        self.bouton_b.place(relx=.65, rely=.4)
+        self.bouton_bw.place(relx=.65, rely=.5)
+        self.bouton_bb.place(relx=.65, rely=.6)
+        self.bouton_flip.place(relx=.65, rely=.7)
         self.scale_black.place(relx=.9, rely=.1, relheight=.8)
         self.scale_white.place(relx=.8, rely=.1, relheight=.8)
         self.img.place(relx=0, rely=0)
@@ -73,7 +74,6 @@ class Interface(Frame):
         self.gameover = 1
         sn.end(thread=False)
         self.quit()
-
 
     def gui_initialisation(self, option):
         self.winfo_toplevel().title("Keivchess")
@@ -108,16 +108,13 @@ class Interface(Frame):
         self.show_bkg(self.bkg)
         self.update()
 
-
     def show_bkg(self, bkg):
-        new_size = min(int(self.winfo_width()*.6), self.winfo_height())
+        new_size = min(int(self.winfo_width() * .6), self.winfo_height())
         self.scale = new_size / 425
         bkg = bkg.resize((new_size, new_size))
         render = ImageTk.PhotoImage(bkg)
         self.img.configure(image=render)
         self.img.image = render
-
-
 
     def display_pieces(self, table, to=1, save=True):
         self.bkg = Image.open(chessboard_path[os_name])
@@ -126,7 +123,7 @@ class Interface(Frame):
                 if table[j, i] != 0:
                     load = Image.open(pieces.images[6 + table[j, i]])
                     load = load.rotate(90 * (to + 1))
-                    load = load.resize((40, 40))
+                    load = load.resize((PIECE_SIZE, PIECE_SIZE))
                     self.bkg.paste(load, (46 * (7 - j) + 32, 46 * i + 32), load)
         self.bkg = self.bkg.rotate(90 * (to + 1))
         w = 0
@@ -161,8 +158,7 @@ class Interface(Frame):
             font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
             draw.text((mouse[0], mouse[1]), f'+{np.abs(s)}', fill=(0, 0, 0), font=font)
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-            color = 2 * (self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] > 0) - 1
-            [x, y] = np.where(self.cb.table == -6 * color)
+            [x, y] = np.where(self.cb.table == -6 * self.current_color())
             mouse = self.tabletomouse(int(x), int(y), self.chess_up)
             load = Image.open(reds_path[os_name])
             load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
@@ -174,7 +170,6 @@ class Interface(Frame):
             self.hist_time = len(self.hist) - 1
         self.show_last()
 
-
     def allowed_moves(self, allrules, movexy):
         for r in allrules:
             if r.split()[0] == movexy:
@@ -184,7 +179,6 @@ class Interface(Frame):
                 load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
                 load.putalpha(128)
                 self.bkg.paste(load, (mouse2[0], mouse2[1]), load)
-
 
     def show_last(self):
         if self.last is None:
@@ -209,14 +203,12 @@ class Interface(Frame):
         self.bkg.paste(load, (mouse1[0] + p1, mouse1[1] + p1), load)
         self.bkg.paste(load, (mouse2[0] + p1, mouse2[1] + p1), load)
 
-
     def add_taken(self, piece):
         if piece != 0:
             sn.capture()
             self.taken.append(piece)
             self.taken.sort()
             self.taken = sorted(self.taken, key=abs)
-
 
     def move_process(self, a, b):
         s = np.sum(self.cb.table)
@@ -235,6 +227,17 @@ class Interface(Frame):
         # display new chessboard
         self.display_pieces(self.cb.table, to=self.chess_up)
 
+    def to_promotion(self, yclick):
+        prev_xy = pieces.xy(self.a)
+        was_sectolast_raw = prev_xy[1] == 3.5 - 2.5 * self.current_color()
+        was_pawn = np.abs(self.cb.table[prev_xy[0]][prev_xy[1]]) == 1
+        last_row = yclick == 3.5 - 3.5 * self.current_color()
+        return was_sectolast_raw and was_pawn and last_row
+
+    def current_color(self):
+        if self.last is None:
+            return 1
+        return 2 * (self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] > 0) - 1
 
     def user_move(self, event):
         [x, y] = (self.mousetotable(event.x, event.y, self.chess_up))
@@ -255,11 +258,41 @@ class Interface(Frame):
         else:
             # if the origin piece (a) is a pawn and the landing (b) coordinate is the edge (0 or 7), set promoted b
             # else, set b
-            if np.abs(
-                    self.cb.table[pieces.xy(self.a)[0]][pieces.xy(self.a)[1]]) == 1 and y == 3.5 + 3.5 * self.chess_up:
-                prom = input('Promotion:N,B,R,Q?')
-                self.b = movexy + prom
+            if self.to_promotion(y):
+                if not self.wait_prom:
+                    self.wait_prom = True
+                    # prom = input('Promotion:N,B,R,Q?')
+                    for k in (range(2, 6)):
+                        load = Image.open(pieces.images[6 - self.current_color() * k])
+                        #load = load.rotate(90 * (self.current_color() + 1))
+                        load = load.resize((PIECE_SIZE // 2, PIECE_SIZE // 2))
+                        self.bkg.paste(
+                            load,
+                            (
+                                (PIECE_SIZE + 6) * int(3.5 * (1 - self.chess_up) + self.chess_up * x) + 32 + PIECE_SIZE // 2 * (k & 1),
+                                (PIECE_SIZE + 6) * int(3.5 * (1 + self.chess_up) - self.chess_up * y) + 32 + PIECE_SIZE // 4 * (k & 2)
+                            ),
+                            load
+                        )
+                    self.b = movexy
+                    self.show_bkg(self.bkg)
+                    self.update()
+                    return False
+                else:
+                    self.wait_prom = False
+                    if movexy == self.b:
+                        [x2, y2] = (self.mousetotable(event.x, event.y, self.chess_up, granularity=16))
+                        self.b += ['R', 'B', 'N', 'Q'][::self.chess_up][2 * (x2 % 2) + (y2 % 2)]
+                    else:
+                        self.a = movexy
+                        self.b = None
+                        self.display_pieces(self.cb.table, to=self.chess_up, save=False)
+                        self.allowed_moves(allrules, movexy)
+                        self.show_bkg(self.bkg)
+                        self.update()
+                        return False
             else:
+                self.wait_prom = False
                 self.b = movexy
             # if (a b) is not an allowed move, unset b and set a as the newly clicked square
             # and reset chessboard (to clear yellow squares) and redraw allowed moved squares
@@ -278,7 +311,6 @@ class Interface(Frame):
                 self.update()
                 return True
 
-
     def ai_move(self, comp):
         cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
         self.move_process(cmove[0], cmove[1])
@@ -286,7 +318,6 @@ class Interface(Frame):
         self.show_bkg(self.bkg)
         self.update()
         return cmove
-
 
     def blindfold_game(self):
         turn = 0
@@ -315,7 +346,6 @@ class Interface(Frame):
             self.update()
             turn = 1 - turn
 
-
     def check_gameover(self, talking=False):
         if pieces.draw(self.cb.table):
             sn.draw()
@@ -325,8 +355,7 @@ class Interface(Frame):
         if len(allrules) == 0 or self.gameover:
             # if in check (as well as no possible move), then checkmate
             if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-                color = 2 * (self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] < 0) - 1
-                if self.chess_up * color > 0:
+                if self.chess_up * self.current_color() > 0:
                     sn.game_over()
                 else:
                     sn.victory()
@@ -341,10 +370,8 @@ class Interface(Frame):
                 blind.engine.runAndWait()
             self.gameover = 1
 
-
     def key(self, event):
         print("pressed", repr(event.char))
-
 
     def leftKey(self, event):
         self.hist_time -= 1
@@ -352,13 +379,11 @@ class Interface(Frame):
         self.show_bkg(self.hist[self.hist_time])
         self.update()
 
-
     def rightKey(self, event):
         self.hist_time += 1
         self.hist_time = min(len(self.hist) - 1, self.hist_time)
         self.show_bkg(self.hist[self.hist_time])
         self.update()
-
 
     def flip(self):
         if self.startGame:
@@ -367,22 +392,18 @@ class Interface(Frame):
             self.show_bkg(self.bkg)
             self.update()
 
-
-    def mousetotable(self, x, y, to):
-        print(x,y)
+    def mousetotable(self, x, y, to, granularity=8):
         x /= self.scale
         y /= self.scale
         c0 = float(33)
         c1 = float(394)
         if to == -1:
-            xnew = 7 - int((x - c0) / (c1 - c0) * 8)
-            ynew = int((y - c0) / (c1 - c0) * 8)
+            xnew = granularity - 1 - int((x - c0) / (c1 - c0) * granularity)
+            ynew = int((y - c0) / (c1 - c0) * granularity)
         else:
-            xnew = int((x - c0) / (c1 - c0) * 8)
-            ynew = 7 - int((y - c0) / (c1 - c0) * 8)
-        print(xnew,ynew)
+            xnew = int((x - c0) / (c1 - c0) * granularity)
+            ynew = granularity - 1 - int((y - c0) / (c1 - c0) * granularity)
         return [xnew, ynew]
-
 
     def tabletomouse(self, x, y, to):
         c0 = 33
@@ -398,7 +419,6 @@ class Interface(Frame):
             xnew = int((c1 - c0) / 8 * x + c0 + mx1)
             ynew = int((c1 - c0) / 8 * (7 - y) + c0 + my1)
         return [int(xnew), int(ynew)]
-
 
     def get_voice_move(self):
         bmove = [0]
@@ -425,14 +445,13 @@ class Interface(Frame):
                 bmove = input("Move: ").split()
         return bmove
 
-
     def callback(self, event):
         if self.startGame and self.option != 'Two computers' and not self.gameover:
             moved = self.user_move(event)
             if moved:
                 # if two player mode, flip chessboard
                 if self.option == 'Two players':
-                    time.sleep(1)
+                    time.sleep(.1)
                     self.chess_up = -self.chess_up
                     self.display_pieces(self.cb.table, to=self.chess_up)
                     self.show_bkg(self.bkg)
@@ -440,7 +459,6 @@ class Interface(Frame):
                 # else, AI plays
                 elif not self.gameover:
                     self.ai_move(self.comp)
-
 
     def on_window_resize(self, event):
         if np.random.random() < 0.1:
@@ -450,7 +468,6 @@ class Interface(Frame):
                 self.show_bkg(self.bkg)
             except:
                 pass
-
 
     def start_game(self, option):
         self.gui_initialisation(option)
@@ -474,7 +491,6 @@ class Interface(Frame):
                     break
 
         self.startGame = True
-
 
 
 window = Tk()
