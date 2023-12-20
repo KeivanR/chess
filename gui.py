@@ -34,7 +34,7 @@ class Interface(Frame):
 
         self.img = Label(self)
 
-        self.bouton_quitter = Button(self, text="Quitter", command=self.quit_and_sound)
+        self.bouton_quitter = Button(self, text="Quit", command=self.quit_and_sound)
 
         self.bouton_tp = Button(self, text="Two players", fg="blue", command=lambda: self.start_game('Two players'))
         self.bouton_tc = Button(self, text="Two computers", fg="blue",
@@ -58,7 +58,7 @@ class Interface(Frame):
         sn.start()
 
     def place_buttons(self):
-        self.bouton_quitter.place(relx=.65, rely=0)
+        self.bouton_quitter.place(relx=.65, rely=0.8)
         self.bouton_tp.place(relx=.65, rely=.1)
         self.bouton_tc.place(relx=.65, rely=.2)
         self.bouton_w.place(relx=.65, rely=.3)
