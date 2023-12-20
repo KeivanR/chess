@@ -211,17 +211,17 @@ class Interface(Frame):
             self.taken = sorted(self.taken, key=abs)
 
     def move_process(self, a, b):
-        s = np.sum(self.cb.table)
+        coor = pieces.xy(b)
+        if self.cb.table[coor[0],coor[1]] != 0:
+            self.add_taken(self.cb.table[coor[0],coor[1]])
+        else:
+            sn.move()
         # update chessboard (move piece)
         self.cb.table = pieces.move(self.cb.table, a, b, self.still)
         # stop game if repetitions exceed limit (stalemate)
         if ai.repet(self.cb.table, self.data_hist):
             self.gameover = 1
         # update taken pieces by subtracting old/new chessboard sum
-        if s != np.sum(self.cb.table):
-            self.add_taken(s - np.sum(self.cb.table))
-        else:
-            sn.move()
         # update last move
         self.last = [a, b]
         # display new chessboard
