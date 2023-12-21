@@ -40,8 +40,6 @@ def sum_value2(table):
 
 def rl_value(model, table, last, still):
     X1 = np.expand_dims(table,0)
-    print(last)
-    print
     X2 = np.expand_dims(np.concatenate([pieces.xy(last[0]), pieces.xy(last[1]), still]),0)
     X = [X1, X2]
     return model.predict(X)
@@ -126,8 +124,9 @@ def rec_sum(table, last, still, data_hist, color, k, noha, noha_lim, first_layer
     if k == 0:
         for m in allr:
             still2 = still[:]
-            table2 = pieces.move(table, m.split()[0], m.split()[1], still2, real=False)
-            val.append(value(table2, m, still2, model))
+            last2 = m.split()
+            table2 = pieces.move(table, last2[0], last2[1], still2, real=False)
+            val.append(value(table2, last2, still2, model))
         val = np.asarray(val)
         if color > 0:
             return [allr[np.random.choice(np.flatnonzero(val == max(val)))], max(val)]
@@ -202,7 +201,11 @@ class Keivchess:
                 first_layer=True,
                 model=self.model
             )
-        if self.level == -1:
+            print('AI(', color, ') assessment: ', res[1])
+            print('INPUT = ', table, last, still, data_hist)
+            print('OUTPUT = ', res[0])
+            move_played = res[0]
+        elif self.level == -1:
             allrules = pieces.allrules_ek(table, last, still)
             move_played = allrules[0]
         elif self.level == 0:
@@ -218,7 +221,6 @@ class Keivchess:
                 self.level - 1,
                 noha=0,
                 noha_lim=self.noha_lim,
-                value_function=sum_value,
                 first_layer=True
             )
 
