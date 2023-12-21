@@ -48,9 +48,9 @@ class Interface(Frame):
         self.bouton_bb = Button(self, text="Blindfold black", fg="black",
                                 command=lambda: self.start_game('Blindfold black'))
         self.bouton_flip = Button(self, text="Flip board", fg="blue", command=lambda: self.flip())
-        self.scale_black = Scale(self, fg="black", from_=4, to=0, label='Black', length=200)
+        self.scale_black = Scale(self, fg="black", from_=5, to=-1, label='Black', length=200)
         self.scale_black.set(3)
-        self.scale_white = Scale(self, fg="black", from_=4, to=0, label='White', length=200)
+        self.scale_white = Scale(self, fg="black", from_=5, to=-1, label='White', length=200)
         self.scale_white.set(3)
 
         self.img = Label(self, image='')
@@ -81,6 +81,7 @@ class Interface(Frame):
         self.data_hist = []
         self.hist_time = 0
         self.gameover = 0
+        self.color_win = 0
         self.option = option
         self.a = None
         self.last = None
@@ -158,7 +159,7 @@ class Interface(Frame):
             font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
             draw.text((mouse[0], mouse[1]), f'+{np.abs(s)}', fill=(0, 0, 0), font=font)
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-            [x, y] = np.where(self.cb.table == -6 * self.current_color())
+            [x, y] = np.where(self.cb.table == -6 * pieces.current_color(self.cb.table, self.last))
             mouse = self.tabletomouse(int(x), int(y), self.chess_up)
             load = Image.open(reds_path[os_name])
             load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
@@ -166,7 +167,7 @@ class Interface(Frame):
             self.bkg.paste(load, (mouse[0], mouse[1]), load)
         if save:
             self.hist.append(self.bkg)
-            self.data_hist.append(self.cb.table)
+            self.data_hist.append((self.cb.table, self.last, self.still))
             self.hist_time = len(self.hist) - 1
         self.show_last()
 
@@ -227,17 +228,13 @@ class Interface(Frame):
         # display new chessboard
         self.display_pieces(self.cb.table, to=self.chess_up)
 
+
     def to_promotion(self, yclick):
         prev_xy = pieces.xy(self.a)
-        was_sectolast_raw = prev_xy[1] == 3.5 - 2.5 * self.current_color()
+        was_sectolast_raw = prev_xy[1] == 3.5 - 2.5 * pieces.current_color(self.cb.table, self.last)
         was_pawn = np.abs(self.cb.table[prev_xy[0]][prev_xy[1]]) == 1
-        last_row = yclick == 3.5 - 3.5 * self.current_color()
+        last_row = yclick == 3.5 - 3.5 * pieces.current_color(self.cb.table, self.last)
         return was_sectolast_raw and was_pawn and last_row
-
-    def current_color(self):
-        if self.last is None:
-            return 1
-        return 2 * (self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] > 0) - 1
 
     def user_move(self, event):
         [x, y] = (self.mousetotable(event.x, event.y, self.chess_up))
@@ -263,8 +260,7 @@ class Interface(Frame):
                     self.wait_prom = True
                     # prom = input('Promotion:N,B,R,Q?')
                     for k in (range(2, 6)):
-                        load = Image.open(pieces.images[6 - self.current_color() * k])
-                        #load = load.rotate(90 * (self.current_color() + 1))
+                        load = Image.open(pieces.images[6 - pieces.current_color(self.cb.table, self.last) * k])
                         load = load.resize((PIECE_SIZE // 2, PIECE_SIZE // 2))
                         self.bkg.paste(
                             load,
@@ -306,15 +302,30 @@ class Interface(Frame):
                 return False
             else:
                 self.move_process(self.a, self.b)
-                self.check_gameover()
+                self.gameover_actions()
                 self.show_bkg(self.bkg)
                 self.update()
                 return True
 
+    def gameover_actions(self):
+        self.gameover, self.color_win = pieces.check_gameover(self.cb.table, self.last, self.still)
+        if self.gameover:
+            if self.color_win == 0:
+                sn.draw()
+                end = 'Draw!'
+            elif self.color_win*self.chess_up == 1:
+                sn.victory()
+                end = 'You won!'
+            else:
+                sn.game_over()
+                end = 'You lost!'
+            self.winfo_toplevel().title(end)
+
+
     def ai_move(self, comp):
         cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
         self.move_process(cmove[0], cmove[1])
-        self.check_gameover()
+        self.gameover_actions()
         self.show_bkg(self.bkg)
         self.update()
         return cmove
@@ -341,34 +352,11 @@ class Interface(Frame):
                 blind.engine.say(cmove[0] + ' to ' + cmove[1])
                 blind.engine.runAndWait()
             print(cmove[0] + ' ' + cmove[1])
-            self.check_gameover(talking=True)
+            self.gameover_actions()
             self.show_bkg(self.bkg)
             self.update()
             turn = 1 - turn
 
-    def check_gameover(self, talking=False):
-        if pieces.draw(self.cb.table):
-            sn.draw()
-            self.gameover = 1
-        # check possible next moves. If none, stop game (checkmate or stalemate)
-        allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-        if len(allrules) == 0 or self.gameover:
-            # if in check (as well as no possible move), then checkmate
-            if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-                if self.chess_up * self.current_color() > 0:
-                    sn.game_over()
-                else:
-                    sn.victory()
-                end = 'checkmate'
-            # else stalemate
-            else:
-                sn.draw()
-                end = 'stalemate'
-            self.winfo_toplevel().title(end)
-            if talking:
-                blind.engine.say(end)
-                blind.engine.runAndWait()
-            self.gameover = 1
 
     def key(self, event):
         print("pressed", repr(event.char))
