@@ -163,7 +163,7 @@ class Interface(Frame):
             font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
             draw.text((mouse[0], mouse[1]), f'+{np.abs(s)}', fill=(0, 0, 0), font=font)
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-            [x, y] = np.where(self.cb.table == -6 * pieces.current_color(self.cb.table, self.last))
+            [x, y] = np.where(self.cb.table == 6 * pieces.current_color(self.cb.table, self.last))
             mouse = self.tabletomouse(int(x), int(y), self.chess_up)
             load = Image.open(reds_path[os_name])
             load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
@@ -236,9 +236,9 @@ class Interface(Frame):
 
     def to_promotion(self, yclick):
         prev_xy = pieces.xy(self.a)
-        was_sectolast_raw = prev_xy[1] == 3.5 - 2.5 * pieces.current_color(self.cb.table, self.last)
+        was_sectolast_raw = prev_xy[1] == 3.5 + 2.5 * pieces.current_color(self.cb.table, self.last)
         was_pawn = np.abs(self.cb.table[prev_xy[0]][prev_xy[1]]) == 1
-        last_row = yclick == 3.5 - 3.5 * pieces.current_color(self.cb.table, self.last)
+        last_row = yclick == 3.5 + 3.5 * pieces.current_color(self.cb.table, self.last)
         return was_sectolast_raw and was_pawn and last_row
 
     def user_move(self, event):
@@ -265,7 +265,7 @@ class Interface(Frame):
                     self.wait_prom = True
                     # prom = input('Promotion:N,B,R,Q?')
                     for k in (range(2, 6)):
-                        load = Image.open(pieces.images[6 - pieces.current_color(self.cb.table, self.last) * k])
+                        load = Image.open(pieces.images[6 + pieces.current_color(self.cb.table, self.last) * k])
                         load = load.resize((PIECE_SIZE // 2, PIECE_SIZE // 2))
                         self.bkg.paste(
                             load,

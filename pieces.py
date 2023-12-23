@@ -22,7 +22,7 @@ def xy(a):
 def current_color(table, last):
     if last is None:
         return 1
-    return 2 * (table[xy(last[1])[0], xy(last[1])[1]] > 0) - 1
+    return 2 * (table[xy(last[1])[0], xy(last[1])[1]] < 0) - 1
 
 def check_gameover(table, last, still):
     gameover = 0
@@ -36,9 +36,9 @@ def check_gameover(table, last, still):
         # if in check (as well as no possible move), then checkmate
         if exposed_king(table, last, still, no_move=True):
             if current_color(table,last) > 0:
-                color_win = 1
-            else:
                 color_win = -1
+            else:
+                color_win = 1
         # else stalemate
         else:
             color_win = 0

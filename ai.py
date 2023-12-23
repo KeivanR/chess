@@ -220,6 +220,7 @@ class Keivchess:
             allrules = pieces.allrules_ek(table, last, still)
             move_played = random.choice(allrules)
         else:
+            print(color)
             res = rec_sum(
                 table,
                 last,
@@ -232,9 +233,9 @@ class Keivchess:
                 first_layer=True
             )
 
-            print('AI(', color, ') assessment: ', res[1])
-            print('INPUT = ', table, last, still, data_hist)
-            print('OUTPUT = ', res[0])
+            # print('AI(', color, ') assessment: ', res[1])
+            # print('INPUT = ', table, last, still, data_hist)
+            # print('OUTPUT = ', res[0])
             move_played = res[0]
         print(int(1000 * float(time.time() - start)) / 1000, 's')
         return move_played
