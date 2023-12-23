@@ -7,9 +7,6 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import BatchNormalization, Conv1D, Activation, Dropout, Flatten, Input, Dense, Concatenate,\
 LSTM, SimpleRNN, ConvLSTM2D
 
-train_data = {'input':[], 'output':[]}
-gamma = 0.95
-
 def repet(table, data_hist, rep_lim=3):
     rep = 0
     for prev_data in data_hist:
@@ -97,16 +94,16 @@ def train_model(model,X,y):
     model.fit(X,y)
 
 
-def update_db(data_hist, color_win):
-    train_data['input'] += data_hist
-    train_data['output'] += [color_win*gamma**i for i in range(len(data_hist))]
 
 
 def pre_process_db(db):
-    pass
+    db = [
+        [db[i,0] for i in range(len(db))],
+        [db[i,1] for i in range(len(db))]
+    ]
+    return db
 
-def train_on_last_games():
-    pass
+
 
 
 def rec_sum(table, last, still, data_hist, color, k, noha, noha_lim, first_layer=False, model=None):
@@ -184,6 +181,17 @@ class Keivchess:
             compile_model(self.model)
         self.X = []
         self.y = []
+        self.train_data = {'input':[], 'output':[]}
+        self.gamma = 0.95
+
+    def train_on_last_games(self):
+        self.train_data['input'] = pre_process_db(self.train_data['input'])
+        train_model(self.model, self.train_data['input'], self.train_data['output'])
+        self.train_data = {'input': [], 'output': []}
+
+    def update_db(self, data_hist, color_win):
+        self.train_data['input'] += data_hist
+        self.train_data['output'] += [color_win * self.gamma ** i for i in range(len(data_hist))]
 
     def move(self, table, last, still, data_hist):
         start = time.time()
