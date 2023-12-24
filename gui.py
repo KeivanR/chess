@@ -225,9 +225,6 @@ class Interface(Frame):
             sn.move()
         # update chessboard (move piece)
         self.cb.table = pieces.move(self.cb.table, a, b, self.still)
-        # stop game if repetitions exceed limit (stalemate)
-        if ai.repet(self.cb.table, self.data_hist):
-            self.gameover = 1
         # update taken pieces by subtracting old/new chessboard sum
         # update last move
         self.last = [a, b]
@@ -315,21 +312,24 @@ class Interface(Frame):
                 return True
 
     def gameover_actions(self):
-        self.gameover, self.color_win = pieces.check_gameover(self.cb.table, self.last, self.still)
-        if self.gameover:
-            if self.training:
-                self.comp[0].update_db(self.data_hist, self.color_win)
-                self.comp[1].update_db(self.data_hist, self.color_win)
-            if self.color_win == 0:
-                sn.draw()
-                end = 'Draw!'
-            elif self.color_win * self.chess_up == 1:
-                sn.victory()
-                end = 'You won!'
-            else:
-                sn.game_over()
-                end = 'You lost!'
-            self.winfo_toplevel().title(end)
+        # stop game if repetitions exceed limit (stalemate)
+        if ai.repet(self.cb.table, self.data_hist):
+            self.gameover = 1
+            sn.draw()
+            end = 'Draw!'
+        else:
+            self.gameover, self.color_win = pieces.check_gameover(self.cb.table, self.last, self.still)
+            if self.gameover:
+                if self.color_win == 0:
+                    sn.draw()
+                    end = 'Draw!'
+                elif self.color_win * self.chess_up == 1:
+                    sn.victory()
+                    end = 'You won!'
+                else:
+                    sn.game_over()
+                    end = 'You lost!'
+                self.winfo_toplevel().title(end)
 
     def ai_move(self, comp):
         cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
@@ -479,17 +479,26 @@ class Interface(Frame):
 
         if self.option in ['Two computers', 'Training']:
             if option == 'Training':
-                n_games = 5
+                n_games = 50000
             else:
                 n_games = 1
             for train_num in range(n_games):
                 turn = 0
+                self.gui_initialisation(option)
+                self.winfo_toplevel().title(f'Training game {train_num}')
                 while not self.gameover:
                     try:
                         self.ai_move(self.comp[turn])
                         turn = 1 - turn
                     except KeyboardInterrupt:
                         break
+                self.comp[0].update_db(self.data_hist, self.color_win)
+                self.comp[1].update_db(self.data_hist, self.color_win)
+                if train_num % 8 == 0:
+                    for k in range(2):
+                        if self.comp[k].level == 5:
+                            self.comp[k].train_on_last_games()
+                            self.comp[k].model.save(f'model{k}')
 
         self.startGame = True
 

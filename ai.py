@@ -35,75 +35,20 @@ def sum_value2(table):
     return s
 
 
+@tf.function
 def rl_value(model, table, last, still):
-    X1 = np.expand_dims(table,0)
-    X2 = np.expand_dims(np.concatenate([pieces.xy(last[0]), pieces.xy(last[1]), still]),0)
+    X1 = tf.expand_dims(table,0)
+    X2 = tf.expand_dims(tf.concat([last[0], last[1], still],0),0)
     X = [X1, X2]
-    return model.predict(X)
+    return model(X)
 
 
 def value(table, last=None, still=None, model=None):
     if model is None:
         return sum_value(table)
     else:
-        return rl_value(model, table, last, still)
-
-
-def CNN_module(inputs, filter_sizes, kernel_sizes):
-    outputs = inputs
-    for f_size,k_size in zip(filter_sizes,kernel_sizes):
-        outputs = tf.keras.layers.Conv1D(f_size, k_size, activation='relu')(outputs)
-        outputs = tf.keras.layers.AveragePooling1D(pool_size=2,strides=1, padding='valid')(outputs)
-        outputs = tf.keras.layers.BatchNormalization()(outputs)
-    return outputs
-
-
-def define_model(name, filter_sizes, kernel_sizes):
-    input1 = Input(shape=(8, 8,))
-    input2 = Input(shape=(8,))
-
-    x1 = BatchNormalization()(input2)
-    x1 = Dense(10, activation='relu')(x1)
-
-    x2 = BatchNormalization()(input1)
-
-    if name == 'CNN':
-        x2 = CNN_module(x2, filter_sizes, kernel_sizes)
-
-    x2 = Flatten()(x2)
-
-    x12 = Concatenate(axis=1)([x1, x2])
-    x12 = BatchNormalization()(x12)
-
-    x12 = Dense(10, activation='relu')(x12)
-    x12 = BatchNormalization()(x12)
-    # x12 = Dropout(0.5)(x12)
-    output = Dense(1, activation='tanh')(x12)
-
-    model = Model([input1, input2], output, name="concat_ANN")
-    return model
-
-
-def compile_model(model):
-    model.compile(
-        loss='mse',
-        optimizer='adam'
-    )
-
-def train_model(model,X,y):
-    model.fit(X,y)
-
-
-
-
-def pre_process_db(db):
-    db = [
-        [db[i,0] for i in range(len(db))],
-        [db[i,1] for i in range(len(db))]
-    ]
-    return db
-
-
+        last = [pieces.xy(last[0]), pieces.xy(last[1])]
+        return rl_value(model, tf.convert_to_tensor(table), tf.convert_to_tensor(last), tf.convert_to_tensor(still))
 
 
 def rec_sum(table, last, still, data_hist, color, k, noha, noha_lim, first_layer=False, model=None):
@@ -172,12 +117,66 @@ def rec_sum(table, last, still, data_hist, color, k, noha, noha_lim, first_layer
 
             return [allrmin[np.random.choice(np.flatnonzero(shine == max(shine)))], min(val)]
 
+
+def CNN_module(inputs, filter_sizes, kernel_sizes):
+    outputs = inputs
+    for f_size,k_size in zip(filter_sizes,kernel_sizes):
+        outputs = tf.keras.layers.Conv1D(f_size, k_size, activation='relu')(outputs)
+        outputs = tf.keras.layers.AveragePooling1D(pool_size=2,strides=1, padding='valid')(outputs)
+        outputs = tf.keras.layers.BatchNormalization()(outputs)
+    return outputs
+
+
+def define_model(name, filter_sizes, kernel_sizes):
+    input1 = Input(shape=(8, 8,))
+    input2 = Input(shape=(8,))
+
+    x1 = BatchNormalization()(input2)
+    x1 = Dense(10, activation='relu')(x1)
+
+    x2 = BatchNormalization()(input1)
+
+    if name == 'CNN':
+        x2 = CNN_module(x2, filter_sizes, kernel_sizes)
+
+    x2 = Flatten()(x2)
+
+    x12 = Concatenate(axis=1)([x1, x2])
+    x12 = BatchNormalization()(x12)
+
+    x12 = Dense(10, activation='relu')(x12)
+    x12 = BatchNormalization()(x12)
+    # x12 = Dropout(0.5)(x12)
+    output = Dense(1, activation='tanh')(x12)
+
+    model = Model([input1, input2], output, name="concat_ANN")
+    return model
+
+
+def compile_model(model):
+    model.compile(
+        loss='mse',
+        optimizer='adam'
+    )
+
+
+def train_model(model,X,y):
+    model.fit(X,y)
+
+
+def pre_process_db(db):
+    db = [
+        np.array([np.array(db[i][0]) for i in range(len(db))]),
+        np.array([np.array(db[i][1]) for i in range(len(db))])
+    ]
+    return db
+
 class Keivchess:
     def __init__(self, level, noha_lim):
         self.level = level
         self.noha_lim = noha_lim
         if self.level == 5:
-            self.model = define_model('myModel', filter_sizes=16, kernel_sizes=8)
+            self.model = define_model('myModel', filter_sizes=8, kernel_sizes=4)
             compile_model(self.model)
         self.X = []
         self.y = []
@@ -186,12 +185,12 @@ class Keivchess:
 
     def train_on_last_games(self):
         self.train_data['input'] = pre_process_db(self.train_data['input'])
-        train_model(self.model, self.train_data['input'], self.train_data['output'])
+        train_model(self.model, self.train_data['input'], np.array(self.train_data['output']))
         self.train_data = {'input': [], 'output': []}
 
     def update_db(self, data_hist, color_win):
         self.train_data['input'] += data_hist
-        self.train_data['output'] += [color_win * self.gamma ** i for i in range(len(data_hist))]
+        self.train_data['output'] += [[color_win * self.gamma ** i] for i in range(len(data_hist))]
 
     def move(self, table, last, still, data_hist):
         start = time.time()
@@ -209,9 +208,9 @@ class Keivchess:
                 first_layer=True,
                 model=self.model
             )
-            print('AI(', color, ') assessment: ', res[1])
-            print('INPUT = ', table, last, still, data_hist)
-            print('OUTPUT = ', res[0])
+            # print('AI(', color, ') assessment: ', res[1])
+            # print('INPUT = ', table, last, still, data_hist)
+            # print('OUTPUT = ', res[0])
             move_played = res[0]
         elif self.level == -1:
             allrules = pieces.allrules_ek(table, last, still)
@@ -220,7 +219,6 @@ class Keivchess:
             allrules = pieces.allrules_ek(table, last, still)
             move_played = random.choice(allrules)
         else:
-            print(color)
             res = rec_sum(
                 table,
                 last,
@@ -237,5 +235,5 @@ class Keivchess:
             # print('INPUT = ', table, last, still, data_hist)
             # print('OUTPUT = ', res[0])
             move_played = res[0]
-        print(int(1000 * float(time.time() - start)) / 1000, 's')
+        #print(int(1000 * float(time.time() - start)) / 1000, 's')
         return move_played
