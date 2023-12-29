@@ -1,5 +1,6 @@
 import time
 from tkinter import *
+from tkinter import filedialog, ttk
 
 import numpy as np
 from PIL import Image, ImageTk, ImageDraw, ImageFont
@@ -8,6 +9,34 @@ import ai
 import pieces
 import sounds as sn
 from constants import *
+
+import os
+import psutil
+
+
+# inner psutil function
+def process_memory():
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    return mem_info.rss
+
+
+# decorator function
+def profile(func):
+    def wrapper(*args, **kwargs):
+        mem_before = process_memory()
+        result = func(*args, **kwargs)
+        mem_after = process_memory()
+        print(func)
+        print(mem_before)
+        print(mem_after)
+        print(mem_after - mem_before)
+
+        return result
+
+    return wrapper
+
+
 
 
 # import blind
@@ -22,6 +51,7 @@ class Interface(Frame):
         self.last = None
         self.still = [1, 1, 1, 1]
         self.gameover = 0
+        self.color_win = 0
         self.hist = []
         self.data_hist = []
         self.hist_time = 0
@@ -31,10 +61,17 @@ class Interface(Frame):
         self.ranking = True
         self.scale = 1
         self.wait_prom = False
+        self.training = False
+        self.models = ['', '']
+        self.play_sound = True
+        self.bkg = Image.open(chessboard_path[os_name])
 
         self.img = Label(self)
 
-        self.bouton_quitter = Button(self, text="Quitter", command=self.quit_and_sound)
+        self.bouton_quitter = Button(self, text="Quit", command=self.quit_and_sound)
+        self.bouton_train = Button(self, text="RL Training", command=lambda: self.start_game('Training'))
+        self.bouton_load_white = Button(self, text="Load White", command=lambda: self.load_model_white())
+        self.bouton_load_black = Button(self, text="Load Black", command=lambda: self.load_model_black())
 
         self.bouton_tp = Button(self, text="Two players", fg="blue", command=lambda: self.start_game('Two players'))
         self.bouton_tc = Button(self, text="Two computers", fg="blue",
@@ -48,17 +85,21 @@ class Interface(Frame):
         self.bouton_bb = Button(self, text="Blindfold black", fg="black",
                                 command=lambda: self.start_game('Blindfold black'))
         self.bouton_flip = Button(self, text="Flip board", fg="blue", command=lambda: self.flip())
-        self.scale_black = Scale(self, fg="black", from_=4, to=0, label='Black', length=200)
-        self.scale_black.set(3)
-        self.scale_white = Scale(self, fg="black", from_=4, to=0, label='White', length=200)
-        self.scale_white.set(3)
+        values = ['First move', 'Random', '1', '2', '3', '4', 'RL (scratch)']
+        self.label_black = Label(self, text="Select AI for black")
+        self.combo_black = ttk.Combobox(self, values=values, name='black')
+        self.combo_black.current(6)
+        self.label_white = Label(self, text="Select AI for white")
+        self.combo_white = ttk.Combobox(self, values=values, name='white')
+        self.combo_white.current(6)
 
         self.img = Label(self, image='')
         self.place_buttons()
         sn.start()
 
     def place_buttons(self):
-        self.bouton_quitter.place(relx=.65, rely=0)
+        self.bouton_train.place(relx=.65, rely=0)
+        self.bouton_quitter.place(relx=.65, rely=0.8)
         self.bouton_tp.place(relx=.65, rely=.1)
         self.bouton_tc.place(relx=.65, rely=.2)
         self.bouton_w.place(relx=.65, rely=.3)
@@ -66,44 +107,65 @@ class Interface(Frame):
         self.bouton_bw.place(relx=.65, rely=.5)
         self.bouton_bb.place(relx=.65, rely=.6)
         self.bouton_flip.place(relx=.65, rely=.7)
-        self.scale_black.place(relx=.9, rely=.1, relheight=.8)
-        self.scale_white.place(relx=.8, rely=.1, relheight=.8)
+        self.label_white.place(relx=.8, rely=.05)
+        self.label_black.place(relx=.8, rely=.15)
+        self.combo_white.place(relx=.8, rely=.1)
+        self.combo_black.place(relx=.8, rely=.2)
+        self.bouton_load_black.place(relx=.9, rely=0)
+        self.bouton_load_white.place(relx=.8, rely=0)
         self.img.place(relx=0, rely=0)
+
+    def load_model_white(self):
+        self.models[0] = filedialog.askdirectory(initialdir='RL models')
+        values = ['First move', 'Random', '1', '2', '3', '4', 'RL (scratch)', f'RL ({self.models[0].split("/")[-1]})']
+        self.combo_white['values'] = values
+        print(self.models)
+
+    def load_model_black(self):
+        self.models[1] = filedialog.askdirectory(initialdir='RL models')
+        values = ['First move', 'Random', '1', '2', '3', '4', 'RL (scratch)', f'RL ({self.models[1].split("/")[-1]})']
+        self.combo_black['values'] = values
+        print(self.models)
 
     def quit_and_sound(self):
         self.gameover = 1
         sn.end(thread=False)
         self.quit()
 
-    def gui_initialisation(self, option):
-        self.winfo_toplevel().title("Keivchess")
+    def memory_initialisation(self):
         self.hist = []
         self.data_hist = []
         self.hist_time = 0
         self.gameover = 0
-        self.option = option
+        self.color_win = 0
         self.a = None
         self.last = None
         self.still = [1, 1, 1, 1]
         self.taken = []
-        self.c1 = [self.scale_white.get(), self.scale_white.get()]
-        self.c2 = [self.scale_black.get(), self.scale_black.get()]
+        self.cb = pieces.Chessboard()
+        self.cb.white_init()
+        self.cb.black_init()
+
+    def gui_initialisation(self, option):
+        self.memory_initialisation()
+        self.option = option
+        self.training = option == 'Training'
+        self.play_sound = option != 'Training'
+        self.model = ''
+        self.c1 = [self.combo_white.get(), self.combo_white.get()]
+        self.c2 = [self.combo_black.get(), self.combo_black.get()]
         if option != 'Two players':
             if 'black' in option:
-                self.comp = ai.Keivchess(self.c1[0], self.c1[1])
+                self.comp = ai.Keivchess(self.c1[0], self.c1[1], self.models[0])
             else:
-                self.comp = ai.Keivchess(self.c2[0], self.c2[1])
-            if option == 'Two computers':
-                self.comp = [ai.Keivchess(self.c1[0], self.c1[1]), ai.Keivchess(self.c2[0], self.c2[1])]
+                self.comp = ai.Keivchess(self.c2[0], self.c2[1], self.models[1])
+            if option in ['Two computers', 'Training']:
+                self.comp = [ai.Keivchess(self.c1[0], self.c1[1], self.models[0]),
+                             ai.Keivchess(self.c2[0], self.c2[1], self.models[1])]
         if option == 'Play black' or option == 'Blindfold black':
             self.chess_up = -1
         else:
             self.chess_up = 1
-        self.cb = pieces.Chessboard()
-        self.cb.white_init()
-        self.cb.black_init()
-        self.bkg = Image.open(chessboard_path[os_name])
-        self.show_bkg(self.bkg)
         self.display_pieces(self.cb.table, to=self.chess_up)
         self.show_bkg(self.bkg)
         self.update()
@@ -158,16 +220,16 @@ class Interface(Frame):
             font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
             draw.text((mouse[0], mouse[1]), f'+{np.abs(s)}', fill=(0, 0, 0), font=font)
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-            [x, y] = np.where(self.cb.table == -6 * self.current_color())
+            [x, y] = np.where(self.cb.table == 6 * pieces.current_color(self.cb.table, self.last))
             mouse = self.tabletomouse(int(x), int(y), self.chess_up)
             load = Image.open(reds_path[os_name])
             load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
             load.putalpha(128)
             self.bkg.paste(load, (mouse[0], mouse[1]), load)
         if save:
-            self.hist.append(self.bkg)
-            self.data_hist.append(self.cb.table)
-            self.hist_time = len(self.hist) - 1
+            if self.last is not None:
+                self.hist.append(self.bkg)
+                self.hist_time = len(self.hist) - 1
         self.show_last()
 
     def allowed_moves(self, allrules, movexy):
@@ -204,40 +266,33 @@ class Interface(Frame):
         self.bkg.paste(load, (mouse2[0] + p1, mouse2[1] + p1), load)
 
     def add_taken(self, piece):
-        if piece != 0:
-            sn.capture()
-            self.taken.append(piece)
-            self.taken.sort()
-            self.taken = sorted(self.taken, key=abs)
+        self.taken.append(piece)
+        self.taken.sort()
+        self.taken = sorted(self.taken, key=abs)
 
     def move_process(self, a, b):
         coor = pieces.xy(b)
-        if self.cb.table[coor[0],coor[1]] != 0:
-            self.add_taken(self.cb.table[coor[0],coor[1]])
+        if self.cb.table[coor[0], coor[1]] != 0:
+            self.add_taken(self.cb.table[coor[0], coor[1]])
+            if self.play_sound:
+                sn.capture()
         else:
-            sn.move()
+            if self.play_sound:
+                sn.move()
         # update chessboard (move piece)
         self.cb.table = pieces.move(self.cb.table, a, b, self.still)
-        # stop game if repetitions exceed limit (stalemate)
-        if ai.repet(self.cb.table, self.data_hist):
-            self.gameover = 1
         # update taken pieces by subtracting old/new chessboard sum
         # update last move
         self.last = [a, b]
-        # display new chessboard
-        self.display_pieces(self.cb.table, to=self.chess_up)
+        X2 = np.concatenate([pieces.xy(self.last[0]), pieces.xy(self.last[1]), self.still])
+        self.data_hist.append((self.cb.table, X2))
 
     def to_promotion(self, yclick):
         prev_xy = pieces.xy(self.a)
-        was_sectolast_raw = prev_xy[1] == 3.5 - 2.5 * self.current_color()
+        was_sectolast_raw = prev_xy[1] == 3.5 + 2.5 * pieces.current_color(self.cb.table, self.last)
         was_pawn = np.abs(self.cb.table[prev_xy[0]][prev_xy[1]]) == 1
-        last_row = yclick == 3.5 - 3.5 * self.current_color()
+        last_row = yclick == 3.5 + 3.5 * pieces.current_color(self.cb.table, self.last)
         return was_sectolast_raw and was_pawn and last_row
-
-    def current_color(self):
-        if self.last is None:
-            return 1
-        return 2 * (self.cb.table[pieces.xy(self.last[1])[0], pieces.xy(self.last[1])[1]] > 0) - 1
 
     def user_move(self, event):
         [x, y] = (self.mousetotable(event.x, event.y, self.chess_up))
@@ -263,14 +318,15 @@ class Interface(Frame):
                     self.wait_prom = True
                     # prom = input('Promotion:N,B,R,Q?')
                     for k in (range(2, 6)):
-                        load = Image.open(pieces.images[6 - self.current_color() * k])
-                        #load = load.rotate(90 * (self.current_color() + 1))
+                        load = Image.open(pieces.images[6 + pieces.current_color(self.cb.table, self.last) * k])
                         load = load.resize((PIECE_SIZE // 2, PIECE_SIZE // 2))
                         self.bkg.paste(
                             load,
                             (
-                                (PIECE_SIZE + 6) * int(3.5 * (1 - self.chess_up) + self.chess_up * x) + 32 + PIECE_SIZE // 2 * (k & 1),
-                                (PIECE_SIZE + 6) * int(3.5 * (1 + self.chess_up) - self.chess_up * y) + 32 + PIECE_SIZE // 4 * (k & 2)
+                                (PIECE_SIZE + 6) * int(
+                                    3.5 * (1 - self.chess_up) + self.chess_up * x) + 32 + PIECE_SIZE // 2 * (k & 1),
+                                (PIECE_SIZE + 6) * int(
+                                    3.5 * (1 + self.chess_up) - self.chess_up * y) + 32 + PIECE_SIZE // 4 * (k & 2)
                             ),
                             load
                         )
@@ -306,17 +362,39 @@ class Interface(Frame):
                 return False
             else:
                 self.move_process(self.a, self.b)
-                self.check_gameover()
+                self.gameover_actions()
+                # display new chessboard
+                self.display_pieces(self.cb.table, to=self.chess_up)
                 self.show_bkg(self.bkg)
                 self.update()
                 return True
 
-    def ai_move(self, comp):
+    def gameover_actions(self):
+        self.gameover, self.color_win = ai.check_gameover(self.cb.table, self.last, self.still, self.data_hist)
+        if self.gameover:
+            if self.color_win == 0:
+                if self.play_sound:
+                    sn.draw()
+                end = 'Draw!'
+            elif self.color_win * self.chess_up == 1:
+                if self.play_sound:
+                    sn.victory()
+                end = 'You won!'
+            else:
+                if self.play_sound:
+                    sn.game_over()
+                end = 'You lost!'
+            self.winfo_toplevel().title(end)
+
+    def ai_move(self, comp, show=True):
         cmove = comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
         self.move_process(cmove[0], cmove[1])
-        self.check_gameover()
-        self.show_bkg(self.bkg)
-        self.update()
+        self.gameover_actions()
+        if show:
+            # display new chessboard
+            self.display_pieces(self.cb.table, to=self.chess_up, save=not self.training)
+            self.show_bkg(self.bkg)
+            self.update()
         return cmove
 
     def blindfold_game(self):
@@ -329,6 +407,8 @@ class Interface(Frame):
             else:
                 bmove = input("Move: ").split()
             self.move_process(bmove[0], bmove[1])
+            # display new chessboard
+            self.display_pieces(self.cb.table, to=self.chess_up)
             self.update()
 
             cmove = self.comp.move(self.cb.table, self.last, self.still, self.data_hist).split()
@@ -337,38 +417,16 @@ class Interface(Frame):
                 blind.engine.runAndWait()
             print(cmove[0] + ' ' + cmove[1])
             self.move_process(cmove[0], cmove[1])
+            # display new chessboard
+            self.display_pieces(self.cb.table, to=self.chess_up)
             if talking:
                 blind.engine.say(cmove[0] + ' to ' + cmove[1])
                 blind.engine.runAndWait()
             print(cmove[0] + ' ' + cmove[1])
-            self.check_gameover(talking=True)
+            self.gameover_actions()
             self.show_bkg(self.bkg)
             self.update()
             turn = 1 - turn
-
-    def check_gameover(self, talking=False):
-        if pieces.draw(self.cb.table):
-            sn.draw()
-            self.gameover = 1
-        # check possible next moves. If none, stop game (checkmate or stalemate)
-        allrules = pieces.allrules_ek(self.cb.table, self.last, self.still)
-        if len(allrules) == 0 or self.gameover:
-            # if in check (as well as no possible move), then checkmate
-            if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
-                if self.chess_up * self.current_color() > 0:
-                    sn.game_over()
-                else:
-                    sn.victory()
-                end = 'checkmate'
-            # else stalemate
-            else:
-                sn.draw()
-                end = 'stalemate'
-            self.winfo_toplevel().title(end)
-            if talking:
-                blind.engine.say(end)
-                blind.engine.runAndWait()
-            self.gameover = 1
 
     def key(self, event):
         print("pressed", repr(event.char))
@@ -388,7 +446,7 @@ class Interface(Frame):
     def flip(self):
         if self.startGame:
             self.chess_up = -self.chess_up
-            self.display_pieces(self.cb.table, to=self.chess_up)
+            self.display_pieces(self.cb.table, to=self.chess_up, save=False)
             self.show_bkg(self.bkg)
             self.update()
 
@@ -481,6 +539,28 @@ class Interface(Frame):
         if 'Blindfold' in option:
             self.blindfold_game()
 
+        if self.option == 'Training':
+            n_games = 50000
+            stats = [0,0,0]
+            timestr = time.strftime("%Y%m%d%H%M%S")
+            for game in range(n_games):
+                turn = 0
+                self.memory_initialisation()
+                while not self.gameover:
+                    try:
+                        self.ai_move(self.comp[turn], show=game % 30 == 0)
+                        turn = 1 - turn
+                    except KeyboardInterrupt:
+                        break
+                stats[self.color_win+1] += 1
+                for i in range(2):
+                    if 'RL' in self.comp[i].mode:
+                        self.comp[i].update_db(self.data_hist, self.color_win)
+                        if game % 8 == 0:
+                            self.comp[i].train_on_last_games()
+                            self.comp[i].model.save(f'RL models/model_{i}_{timestr}')
+                self.winfo_toplevel().title(f'Training. Game {game}. Stats: B{stats[0]}/D{stats[1]}/W{stats[2]}')
+                self.update()
         if self.option == 'Two computers':
             turn = 0
             while not self.gameover:

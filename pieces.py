@@ -19,6 +19,32 @@ def xy(a):
     y = int(a[1]) - 1
     return [x, y]
 
+def current_color(table, last):
+    if last is None:
+        return 1
+    return 2 * (table[xy(last[1])[0], xy(last[1])[1]] < 0) - 1
+
+def check_gameover(table, last, still):
+    gameover = 0
+    color_win = 0
+    if draw(table):
+        color_win = 0
+        gameover = 1
+    # check possible next moves. If none, stop game (checkmate or stalemate)
+    allrules = allrules_ek(table, last, still)
+    if len(allrules) == 0:
+        # if in check (as well as no possible move), then checkmate
+        if exposed_king(table, last, still, no_move=True):
+            if current_color(table,last) > 0:
+                color_win = -1
+            else:
+                color_win = 1
+        # else stalemate
+        else:
+            color_win = 0
+        gameover = 1
+    return gameover, color_win
+
 
 def mv(x, y):
     return str(chr(ord('a') + x)) + str(y + 1)
