@@ -6,32 +6,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import BatchNormalization, Conv1D, Activation, Dropout, Flatten, Input, Dense, Concatenate, \
     LSTM, SimpleRNN, ConvLSTM2D
+from constants import *
 
-import os
-import psutil
-
-
-# inner psutil function
-def process_memory():
-    process = psutil.Process(os.getpid())
-    mem_info = process.memory_info()
-    return mem_info.rss
-
-
-# decorator function
-def profile(func):
-    def wrapper(*args, **kwargs):
-        mem_before = process_memory()
-        result = func(*args, **kwargs)
-        mem_after = process_memory()
-        print(func)
-        print(mem_before)
-        print(mem_after)
-        print(mem_after - mem_before)
-
-        return result
-
-    return wrapper
 
 
 def repet(table, data_hist, rep_lim=3):
@@ -243,8 +219,11 @@ class Keivchess:
         self.mode = mode
         self.noha_lim = noha_lim
         if 'RL' in self.mode:
-            self.batch_size = 16
-            if self.mode == 'RL (scratch)':
+            self.batch_size = BATCH_SIZE
+            if self.mode == 'RL (CNN)':
+                self.model = define_model('CNN', filter_sizes=(16, 32), kernel_sizes=(2, 2))
+                compile_model(self.model)
+            elif self.mode == 'RL (Dense)':
                 self.model = define_model('noCNN', filter_sizes=(16, 32), kernel_sizes=(2, 2))
                 compile_model(self.model)
             else:
@@ -252,9 +231,9 @@ class Keivchess:
         self.X = []
         self.y = []
         self.train_data = {'input': [], 'output': []}
-        self.gamma = 0.95
+        self.gamma = GAMMA
+        self.train_period = TRAIN_PER
 
-    @profile
     def train_on_last_games(self):
         X = self.train_data['input']
         y = self.train_data['output']

@@ -3,8 +3,8 @@ from tkinter import *
 from tkinter import filedialog, ttk
 
 import numpy as np
-from PIL import Image, ImageTk, ImageDraw, ImageFont
-
+from PIL import ImageTk, ImageDraw, ImageFont
+import PIL.Image
 import ai
 import pieces
 import sounds as sn
@@ -13,8 +13,11 @@ from constants import *
 import os
 import psutil
 
+from tkinter import *
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-# inner psutil function
+
 def process_memory():
     process = psutil.Process(os.getpid())
     mem_info = process.memory_info()
@@ -36,10 +39,6 @@ def profile(func):
 
     return wrapper
 
-
-
-
-# import blind
 
 class Interface(Frame):
     def __init__(self, fenetre, **kwargs):
@@ -64,7 +63,10 @@ class Interface(Frame):
         self.training = False
         self.models = ['', '']
         self.play_sound = True
-        self.bkg = Image.open(chessboard_path[os_name])
+        self.bkg = PIL.Image.open(chessboard_path[os_name])
+        self.all_stats = []
+        self.canvas = None
+        self.plot1 = None
 
         self.img = Label(self)
 
@@ -85,7 +87,7 @@ class Interface(Frame):
         self.bouton_bb = Button(self, text="Blindfold black", fg="black",
                                 command=lambda: self.start_game('Blindfold black'))
         self.bouton_flip = Button(self, text="Flip board", fg="blue", command=lambda: self.flip())
-        values = ['First move', 'Random', '1', '2', '3', '4', 'RL (scratch)']
+        values = ['First move', 'Random', '1', '2', '3', '4', 'RL (CNN)', 'RL (Dense)']
         self.label_black = Label(self, text="Select AI for black")
         self.combo_black = ttk.Combobox(self, values=values, name='black')
         self.combo_black.current(6)
@@ -148,6 +150,7 @@ class Interface(Frame):
 
     def gui_initialisation(self, option):
         self.memory_initialisation()
+        self.all_stats = []
         self.option = option
         self.training = option == 'Training'
         self.play_sound = option != 'Training'
@@ -162,6 +165,17 @@ class Interface(Frame):
             if option in ['Two computers', 'Training']:
                 self.comp = [ai.Keivchess(self.c1[0], self.c1[1], self.models[0]),
                              ai.Keivchess(self.c2[0], self.c2[1], self.models[1])]
+                if option == 'Training':
+                    fig = Figure(figsize=(3, 3), dpi=110)
+                    self.canvas = FigureCanvasTkAgg(fig, master=self, )
+                    self.canvas.get_tk_widget().pack()
+                    toolbar = NavigationToolbar2Tk(self.canvas, self)
+                    toolbar.update()
+                    self.canvas.get_tk_widget().pack()
+                    self.plot1 = fig.add_subplot(111)
+                    self.plot1.plot([], [])
+                    self.plot1.set_ylim(0, 100)
+
         if option == 'Play black' or option == 'Blindfold black':
             self.chess_up = -1
         else:
@@ -170,23 +184,33 @@ class Interface(Frame):
         self.show_bkg(self.bkg)
         self.update()
 
+    def plot_stats(self, stats):
+        self.all_stats.append(stats)
+        print(self.all_stats)
+        y = (100 * np.array(self.all_stats).T / np.sum(self.all_stats, axis=1).T).T
+        x = np.arange(len(self.all_stats))
+        self.plot1.clear()
+        self.plot1.plot(x, y)
+        self.plot1.set_xlim(0, len(x))
+        self.canvas.draw()
+
     def show_bkg(self, bkg):
         new_size = min(int(self.winfo_width() * .6), self.winfo_height())
-        self.scale = new_size / 425
+        self.scale = new_size / CHESSBOARD_SIZE
         bkg = bkg.resize((new_size, new_size))
         render = ImageTk.PhotoImage(bkg)
         self.img.configure(image=render)
         self.img.image = render
 
     def display_pieces(self, table, to=1, save=True):
-        self.bkg = Image.open(chessboard_path[os_name])
+        self.bkg = PIL.Image.open(chessboard_path[os_name])
         for i in range(8):
             for j in range(8):
                 if table[j, i] != 0:
-                    load = Image.open(pieces.images[6 + table[j, i]])
+                    load = PIL.Image.open(pieces.images[6 + table[j, i]])
                     load = load.rotate(90 * (to + 1))
                     load = load.resize((PIECE_SIZE, PIECE_SIZE))
-                    self.bkg.paste(load, (46 * (7 - j) + 32, 46 * i + 32), load)
+                    self.bkg.paste(load, (PIECES_SPACING * (7 - j) + CB_BORDER, PIECES_SPACING * i + CB_BORDER), load)
         self.bkg = self.bkg.rotate(90 * (to + 1))
         w = 0
         b = 0
@@ -194,27 +218,27 @@ class Interface(Frame):
         for i in range(len(self.taken)):
             if self.taken[i] < 0:
                 if piece == self.taken[i]:
-                    b += 0.2
+                    b += SAME_TAKEN_SPACING
                 else:
-                    b += 0.45
+                    b += DIFF_TAKEN_SPACING
                 mouse = self.tabletomouse(-1 + b, 3.5 - 4.4 * to, 1)
             else:
                 if piece == self.taken[i]:
-                    w += 0.2
+                    w += SAME_TAKEN_SPACING
                 else:
-                    w += 0.45
+                    w += DIFF_TAKEN_SPACING
                 mouse = self.tabletomouse(-1 + w, 3.5 + 4.4 * to, 1)
             piece = self.taken[i]
-            load = Image.open(pieces.images[6 + piece])
+            load = PIL.Image.open(pieces.images[6 + piece])
             load = load.resize((30, 30))
             self.bkg.paste(load, (mouse[0], mouse[1]), load)
         s = ai.sum_value(self.cb.table)
         if s != 0:
             if s > 0:
-                b += 0.75
+                b += SCORE_SPACING
                 mouse = self.tabletomouse(-1 + b, 3.4 - 4.5 * to, 1)
             else:
-                w += 0.75
+                w += SCORE_SPACING
                 mouse = self.tabletomouse(-1 + w, 3.4 + 4.5 * to, 1)
             draw = ImageDraw.Draw(self.bkg)
             font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
@@ -222,7 +246,7 @@ class Interface(Frame):
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
             [x, y] = np.where(self.cb.table == 6 * pieces.current_color(self.cb.table, self.last))
             mouse = self.tabletomouse(int(x), int(y), self.chess_up)
-            load = Image.open(reds_path[os_name])
+            load = PIL.Image.open(reds_path[os_name])
             load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
             load.putalpha(128)
             self.bkg.paste(load, (mouse[0], mouse[1]), load)
@@ -237,7 +261,7 @@ class Interface(Frame):
             if r.split()[0] == movexy:
                 xy2 = pieces.xy(r.split()[1])
                 mouse2 = self.tabletomouse(xy2[0], xy2[1], self.chess_up)
-                load = Image.open(yellows_path[os_name])
+                load = PIL.Image.open(yellows_path[os_name])
                 load = load.resize((SQUARE_SIZE, SQUARE_SIZE))
                 load.putalpha(128)
                 self.bkg.paste(load, (mouse2[0], mouse2[1]), load)
@@ -251,7 +275,7 @@ class Interface(Frame):
         mouse2 = self.tabletomouse(xy2[0], xy2[1], self.chess_up)
         p1 = -5
         p2 = 33
-        load = Image.open(reds_path[os_name])
+        load = PIL.Image.open(reds_path[os_name])
         load = load.resize((SURROUND_SIZE, 5))
         self.bkg.paste(load, (mouse1[0] + p1, mouse1[1] + p2), load)
         self.bkg.paste(load, (mouse2[0] + p1, mouse2[1] + p2), load)
@@ -318,7 +342,7 @@ class Interface(Frame):
                     self.wait_prom = True
                     # prom = input('Promotion:N,B,R,Q?')
                     for k in (range(2, 6)):
-                        load = Image.open(pieces.images[6 + pieces.current_color(self.cb.table, self.last) * k])
+                        load = PIL.Image.open(pieces.images[6 + pieces.current_color(self.cb.table, self.last) * k])
                         load = load.resize((PIECE_SIZE // 2, PIECE_SIZE // 2))
                         self.bkg.paste(
                             load,
@@ -540,26 +564,26 @@ class Interface(Frame):
             self.blindfold_game()
 
         if self.option == 'Training':
-            n_games = 50000
-            stats = [0,0,0]
+            stats = [0, 0, 0]
             timestr = time.strftime("%Y%m%d%H%M%S")
-            for game in range(n_games):
+            for game in range(N_GAMES):
                 turn = 0
                 self.memory_initialisation()
                 while not self.gameover:
                     try:
-                        self.ai_move(self.comp[turn], show=game % 30 == 0)
+                        self.ai_move(self.comp[turn], show=game % SHOW_TRAINING_GAMES_PER == 0)
                         turn = 1 - turn
                     except KeyboardInterrupt:
                         break
-                stats[self.color_win+1] += 1
+                stats[self.color_win + 1] += 1
                 for i in range(2):
                     if 'RL' in self.comp[i].mode:
                         self.comp[i].update_db(self.data_hist, self.color_win)
-                        if game % 8 == 0:
+                        if game % TRAIN_PER == 0:
                             self.comp[i].train_on_last_games()
                             self.comp[i].model.save(f'RL models/model_{i}_{timestr}')
                 self.winfo_toplevel().title(f'Training. Game {game}. Stats: B{stats[0]}/D{stats[1]}/W{stats[2]}')
+                self.plot_stats(stats)
                 self.update()
         if self.option == 'Two computers':
             turn = 0
