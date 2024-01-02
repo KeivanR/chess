@@ -185,17 +185,15 @@ class Interface(Frame):
         self.update()
 
     def plot_stats(self, stats):
-        self.all_stats.append(stats)
-        print(self.all_stats)
-        y = (100 * np.array(self.all_stats).T / np.sum(self.all_stats, axis=1).T).T
-        x = np.arange(len(self.all_stats))
+        y = (100 * np.array(stats).T / np.sum(stats, axis=1).T).T
+        x = np.arange(len(stats))
         self.plot1.clear()
         self.plot1.plot(x, y)
         self.plot1.set_xlim(0, len(x))
         self.canvas.draw()
 
     def show_bkg(self, bkg):
-        new_size = min(int(self.winfo_width() * .6), self.winfo_height())
+        new_size = min(int(self.winfo_width() * REL_CHESSBOARD_SIZE), self.winfo_height())
         self.scale = new_size / CHESSBOARD_SIZE
         bkg = bkg.resize((new_size, new_size))
         render = ImageTk.PhotoImage(bkg)
@@ -230,7 +228,7 @@ class Interface(Frame):
                 mouse = self.tabletomouse(-1 + w, 3.5 + 4.4 * to, 1)
             piece = self.taken[i]
             load = PIL.Image.open(pieces.images[6 + piece])
-            load = load.resize((30, 30))
+            load = load.resize((TAKEN_PIECE_SIZE, TAKEN_PIECE_SIZE))
             self.bkg.paste(load, (mouse[0], mouse[1]), load)
         s = ai.sum_value(self.cb.table)
         if s != 0:
@@ -241,7 +239,7 @@ class Interface(Frame):
                 w += SCORE_SPACING
                 mouse = self.tabletomouse(-1 + w, 3.4 + 4.5 * to, 1)
             draw = ImageDraw.Draw(self.bkg)
-            font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
+            font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=SCORE_FONT_SIZE)
             draw.text((mouse[0], mouse[1]), f'+{np.abs(s)}', fill=(0, 0, 0), font=font)
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
             [x, y] = np.where(self.cb.table == 6 * pieces.current_color(self.cb.table, self.last))
@@ -348,9 +346,9 @@ class Interface(Frame):
                             load,
                             (
                                 (PIECE_SIZE + 6) * int(
-                                    3.5 * (1 - self.chess_up) + self.chess_up * x) + 32 + PIECE_SIZE // 2 * (k & 1),
+                                    3.5 * (1 - self.chess_up) + self.chess_up * x) + CB_BORDER + PIECE_SIZE // 2 * (k & 1),
                                 (PIECE_SIZE + 6) * int(
-                                    3.5 * (1 + self.chess_up) - self.chess_up * y) + 32 + PIECE_SIZE // 4 * (k & 2)
+                                    3.5 * (1 + self.chess_up) - self.chess_up * y) + CB_BORDER + PIECE_SIZE // 4 * (k & 2)
                             ),
                             load
                         )
@@ -477,8 +475,8 @@ class Interface(Frame):
     def mousetotable(self, x, y, to, granularity=8):
         x /= self.scale
         y /= self.scale
-        c0 = float(33)
-        c1 = float(394)
+        c0 = float(CB_BORDER)
+        c1 = float(CHESSBOARD_SIZE - CB_BORDER)
         if to == -1:
             xnew = granularity - 1 - int((x - c0) / (c1 - c0) * granularity)
             ynew = int((y - c0) / (c1 - c0) * granularity)
@@ -488,8 +486,8 @@ class Interface(Frame):
         return [xnew, ynew]
 
     def tabletomouse(self, x, y, to):
-        c0 = 33
-        c1 = 394
+        c0 = CB_BORDER
+        c1 = CHESSBOARD_SIZE - CB_BORDER
         mx1 = 8
         my1 = 4
         mx2 = 3
@@ -543,7 +541,7 @@ class Interface(Frame):
                     self.ai_move(self.comp)
 
     def on_window_resize(self, event):
-        if np.random.random() < 0.1:
+        if np.random.random() < ON_WINDOW_RESIZE__RANDOM_TRIGGER:
             width = event.width
             height = event.height
             try:
@@ -583,7 +581,8 @@ class Interface(Frame):
                             self.comp[i].train_on_last_games()
                             self.comp[i].model.save(f'RL models/model_{i}_{timestr}')
                 self.winfo_toplevel().title(f'Training. Game {game}. Stats: B{stats[0]}/D{stats[1]}/W{stats[2]}')
-                self.plot_stats(stats)
+                self.all_stats.append(stats.copy())
+                self.plot_stats(self.all_stats)
                 self.update()
         if self.option == 'Two computers':
             turn = 0
