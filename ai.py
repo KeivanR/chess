@@ -5,9 +5,8 @@ import random
 import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import BatchNormalization, Conv1D, Activation, Dropout, Flatten, Input, Dense, Concatenate, \
-    LSTM, SimpleRNN, ConvLSTM2D
+    LSTM, SimpleRNN, ConvLSTM2D, Embedding
 from constants import *
-
 
 
 def repet(table, data_hist, rep_lim=3):
@@ -58,7 +57,7 @@ def value(table, last=None, still=None, model=None):
         return sum_value(table)
     else:
         last = [pieces.xy(last[0]), pieces.xy(last[1])]
-        table = to_one_hot(np.expand_dims(table, 0))
+        table = np.expand_dims(table, 0)+6
         return rl_value(model, tf.convert_to_tensor(table), tf.convert_to_tensor(last), tf.convert_to_tensor(still))
 
 
@@ -141,14 +140,15 @@ def CNN_module(inputs, filter_sizes, kernel_sizes):
 
 
 def define_model(name, filter_sizes, kernel_sizes):
-    input1 = Input(shape=(8, 8, 13,))
+    input1 = Input(shape=(8, 8, 1,))
     input2 = Input(shape=(8,))
 
     x1 = BatchNormalization()(input2)
     x1 = Dense(10, activation='relu')(x1)
     x1 = Dense(30, activation='relu')(x1)
 
-    x2 = BatchNormalization()(input1)
+    x2 = Embedding(13, 4)(input1)
+    x2 = tf.squeeze(x2,-2)
 
     if name == 'CNN':
         x2 = CNN_module(x2, filter_sizes, kernel_sizes)
@@ -180,7 +180,7 @@ optimizer = tf.keras.optimizers.Adam()
 
 
 def train_model(model, X, y, batch_size):
-    model.fit(X,y,batch_size=batch_size)
+    model.fit(X, y, batch_size=batch_size)
     '''
     train_dataset = tf.data.Dataset.from_tensor_slices((X[0],X[1], y))
     train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
@@ -191,7 +191,7 @@ def train_model(model, X, y, batch_size):
                 logits = model([x_batch_train0, x_batch_train1], training=True)
                 loss_value = loss_fn(y_batch_train, logits)
             grads = tape.gradient(loss_value, model.trainable_weights)
-            optimizer.apply_gradients(zip(grads, model.trainable_weights))
+            optimizer.apply_gradients(zip(grads, model.trainable_wone_heights))
 
     '''
 
@@ -208,7 +208,7 @@ def to_one_hot(table):
 
 def pre_process_db(db):
     db = [
-        tf.convert_to_tensor(to_one_hot(np.array([db[i][0] for i in range(len(db))]))),
+        tf.convert_to_tensor(np.array([db[i][0] for i in range(len(db))])+6),
         tf.convert_to_tensor(np.array([db[i][1] for i in range(len(db))]))
     ]
     return db

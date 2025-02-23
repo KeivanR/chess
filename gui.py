@@ -174,7 +174,6 @@ class Interface(Frame):
                     self.canvas.get_tk_widget().pack()
                     self.plot1 = fig.add_subplot(111)
                     self.plot1.plot([], [])
-                    self.plot1.set_ylim(0, 100)
 
         if option == 'Play black' or option == 'Blindfold black':
             self.chess_up = -1
@@ -185,11 +184,19 @@ class Interface(Frame):
         self.update()
 
     def plot_stats(self, stats):
-        y = (100 * np.array(stats).T / np.sum(stats, axis=1).T).T
+        N = min(30,len(stats))
+        y0 = np.convolve(100 * np.array(stats)[:,0], np.ones(N)/N, mode='same')
+        y1 = np.convolve(100 * np.array(stats)[:,1], np.ones(N)/N, mode='same')
+        y2 = np.convolve(100 * np.array(stats)[:,2], np.ones(N)/N, mode='same')
+        y = np.stack((y0,y1,y2),-1)
         x = np.arange(len(stats))
         self.plot1.clear()
         self.plot1.plot(x, y)
         self.plot1.set_xlim(0, len(x))
+        self.plot1.set_ylim(-5, 105)
+        sums = np.sum(np.array(stats)[-N:],0)
+        self.plot1.set_title(f'{100-sums[1]/sum(sums):.1f}% of checkmates')
+        self.plot1.legend(['B-win', 'Draw', 'W-win'])
         self.canvas.draw()
 
     def show_bkg(self, bkg):
@@ -346,9 +353,11 @@ class Interface(Frame):
                             load,
                             (
                                 (PIECE_SIZE + 6) * int(
-                                    3.5 * (1 - self.chess_up) + self.chess_up * x) + CB_BORDER + PIECE_SIZE // 2 * (k & 1),
+                                    3.5 * (1 - self.chess_up) + self.chess_up * x) + CB_BORDER + PIECE_SIZE // 2 * (
+                                            k & 1),
                                 (PIECE_SIZE + 6) * int(
-                                    3.5 * (1 + self.chess_up) - self.chess_up * y) + CB_BORDER + PIECE_SIZE // 4 * (k & 2)
+                                    3.5 * (1 + self.chess_up) - self.chess_up * y) + CB_BORDER + PIECE_SIZE // 4 * (
+                                            k & 2)
                             ),
                             load
                         )
@@ -562,9 +571,9 @@ class Interface(Frame):
             self.blindfold_game()
 
         if self.option == 'Training':
-            stats = [0, 0, 0]
             timestr = time.strftime("%Y%m%d%H%M%S")
             for game in range(N_GAMES):
+                stats = [0, 0, 0]
                 turn = 0
                 self.memory_initialisation()
                 while not self.gameover:
@@ -573,7 +582,7 @@ class Interface(Frame):
                         turn = 1 - turn
                     except KeyboardInterrupt:
                         break
-                stats[self.color_win + 1] += 1
+                stats[self.color_win + 1] = 1
                 for i in range(2):
                     if 'RL' in self.comp[i].mode:
                         self.comp[i].update_db(self.data_hist, self.color_win)
