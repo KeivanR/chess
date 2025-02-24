@@ -217,7 +217,7 @@ class Interface(Frame):
                 w += 0.75
                 mouse = self.tabletomouse(-1 + w, 3.4 + 4.5 * to, 1)
             draw = ImageDraw.Draw(self.bkg)
-            font = ImageFont.truetype("/usr/share/fonts/truetype/open-sans/OpenSans-Bold.ttf", size=15)
+            font = ImageFont.truetype("fonts/OpenSans-Bold.ttf", size=15)
             draw.text((mouse[0], mouse[1]), f'+{np.abs(s)}', fill=(0, 0, 0), font=font)
         if pieces.exposed_king(self.cb.table, self.last, self.still, no_move=True):
             [x, y] = np.where(self.cb.table == 6 * pieces.current_color(self.cb.table, self.last))
@@ -558,7 +558,7 @@ class Interface(Frame):
                         self.comp[i].update_db(self.data_hist, self.color_win)
                         if game % 8 == 0:
                             self.comp[i].train_on_last_games()
-                            self.comp[i].model.save(f'RL models/model_{i}_{timestr}')
+                            self.comp[i].model.save(f'RL models/model_{i}_{timestr}.keras')
                 self.winfo_toplevel().title(f'Training. Game {game}. Stats: B{stats[0]}/D{stats[1]}/W{stats[2]}')
                 self.update()
         if self.option == 'Two computers':
